@@ -387,11 +387,11 @@ impl CairoRunner {
         Ok(())
     }
 
-    pub fn get_output(&mut self, vm: &mut VirtualMachine) -> Result<Option<String>, RunnerError> {
+    pub fn get_output(&mut self, vm: &mut VirtualMachine) -> Result<String, RunnerError> {
         let mut output = Vec::<u8>::new();
         self.write_output(vm, &mut output)?;
         let output = String::from_utf8(output).map_err(|_| RunnerError::FailedStringConversion)?;
-        Ok(Some(output))
+        Ok(output)
     }
 
     ///Writes the values hosted in the output builtin's segment
