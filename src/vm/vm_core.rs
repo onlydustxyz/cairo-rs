@@ -464,9 +464,12 @@ impl VirtualMachine {
     }
 
     pub fn step_instruction(&mut self) -> Result<(), VirtualMachineError> {
-        let instruction = self.decode_current_instruction()?;
-        self.run_instruction(instruction)?;
-        self.skip_instruction_execution = false;
+        if !self.skip_instruction_execution {
+            let instruction = self.decode_current_instruction()?;
+            self.run_instruction(instruction)?;
+        } else {
+            self.skip_instruction_execution = false;
+        }
         Ok(())
     }
 
@@ -748,8 +751,13 @@ impl VirtualMachine {
         }
         Err(VirtualMachineError::NoRangeCheckBuiltin)
     }
+
     pub fn disable_trace(&mut self) {
         self.trace = None
+    }
+
+    pub fn skip_next_instruction_execution(&mut self) {
+        self.skip_instruction_execution = true;
     }
 
     #[doc(hidden)]
