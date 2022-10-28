@@ -28,4 +28,10 @@ pub enum MemoryError {
     NonZeroOffset(usize),
     #[error("Attempt to overwrite a relocation rule, segment: {0}")]
     DuplicatedRelocation(isize),
+    #[error("accessed_addresses is None.")]
+    MissingAccessedAddresses,
+    #[error("Segment effective sizes haven't been calculated.")]
+    MissingSegmentUsedSizes,
+    #[error("Segment at index {0} either doesn't exist or is not finalized.")]
+    SegmentNotFinalized(usize),
 }
