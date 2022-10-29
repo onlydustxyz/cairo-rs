@@ -30,7 +30,11 @@ pub struct Operands {
 }
 
 #[derive(PartialEq, Debug)]
-struct OperandsAddresses(Relocatable, Relocatable, Relocatable);
+struct OperandsAddresses {
+    dst_addr: Relocatable,
+    op0_addr: Relocatable,
+    op1_addr: Relocatable,
+}
 
 #[derive(Clone, Debug)]
 pub struct HintData {
@@ -419,9 +423,9 @@ impl VirtualMachine {
             let op_addrs =
                 operands_mem_addresses.ok_or(VirtualMachineError::InvalidInstructionEncoding)?;
             let addresses = [
-                op_addrs.0,
-                op_addrs.1,
-                op_addrs.2,
+                op_addrs.dst_addr,
+                op_addrs.op0_addr,
+                op_addrs.op1_addr,
                 self.run_context.pc.clone(),
             ];
             accessed_addresses.extend(addresses.into_iter());
@@ -605,7 +609,11 @@ impl VirtualMachine {
             .map_err(VirtualMachineError::MemoryError)?;
 
         let accessed_addresses = if self.accessed_addresses.is_some() {
-            Some(OperandsAddresses(dst_addr, op0_addr, op1_addr))
+            Some(OperandsAddresses {
+                dst_addr,
+                op0_addr,
+                op1_addr,
+            })
         } else {
             None
         };
@@ -2107,11 +2115,11 @@ mod tests {
             op1: op1_addr_value.clone(),
         };
 
-        let expected_addresses = Some(OperandsAddresses(
-            dst_addr.get_relocatable().unwrap().clone(),
-            op0_addr.get_relocatable().unwrap().clone(),
-            op1_addr.get_relocatable().unwrap().clone(),
-        ));
+        let expected_addresses = Some(OperandsAddresses {
+            dst_addr: dst_addr.get_relocatable().unwrap().clone(),
+            op0_addr: op0_addr.get_relocatable().unwrap().clone(),
+            op1_addr: op1_addr.get_relocatable().unwrap().clone(),
+        });
 
         let (operands, addresses) = vm.compute_operands(&inst).unwrap();
         assert!(operands == expected_operands);
@@ -2158,11 +2166,11 @@ mod tests {
             op1: op1_addr_value.clone(),
         };
 
-        let expected_addresses = Some(OperandsAddresses(
-            dst_addr.get_relocatable().unwrap().clone(),
-            op0_addr.get_relocatable().unwrap().clone(),
-            op1_addr.get_relocatable().unwrap().clone(),
-        ));
+        let expected_addresses = Some(OperandsAddresses {
+            dst_addr: dst_addr.get_relocatable().unwrap().clone(),
+            op0_addr: op0_addr.get_relocatable().unwrap().clone(),
+            op1_addr: op1_addr.get_relocatable().unwrap().clone(),
+        });
 
         let (operands, addresses) = vm.compute_operands(&inst).unwrap();
         assert!(operands == expected_operands);
@@ -2201,11 +2209,11 @@ mod tests {
             op1: mayberelocatable!(4),
         };
 
-        let expected_addresses = Some(OperandsAddresses(
-            relocatable!(1, 1),
-            relocatable!(1, 1),
-            relocatable!(0, 1),
-        ));
+        let expected_addresses = Some(OperandsAddresses {
+            dst_addr: relocatable!(1, 1),
+            op0_addr: relocatable!(1, 1),
+            op1_addr: relocatable!(0, 1),
+        });
 
         let (operands, addresses) = vm.compute_operands(&instruction).unwrap();
         assert!(operands == expected_operands);
@@ -2761,11 +2769,11 @@ mod tests {
                 b"3270867057177188607814717243084834301278723532952411121381966378910183338911"
             )),
         };
-        let expected_operands_mem_addresses = Some(OperandsAddresses(
-            Relocatable::from((1, 13)),
-            Relocatable::from((1, 7)),
-            Relocatable::from((3, 2)),
-        ));
+        let expected_operands_mem_addresses = Some(OperandsAddresses {
+            dst_addr: Relocatable::from((1, 13)),
+            op0_addr: Relocatable::from((1, 7)),
+            op1_addr: Relocatable::from((3, 2)),
+        });
         assert_eq!(
             Ok((expected_operands, expected_operands_mem_addresses)),
             vm.compute_operands(&instruction)
@@ -2843,11 +2851,11 @@ mod tests {
             op0: MaybeRelocatable::from((2, 0)),
             op1: MaybeRelocatable::from(bigint!(8)),
         };
-        let expected_operands_mem_addresses = Some(OperandsAddresses(
-            Relocatable::from((1, 9)),
-            Relocatable::from((1, 3)),
-            Relocatable::from((2, 2)),
-        ));
+        let expected_operands_mem_addresses = Some(OperandsAddresses {
+            dst_addr: Relocatable::from((1, 9)),
+            op0_addr: Relocatable::from((1, 3)),
+            op1_addr: Relocatable::from((2, 2)),
+        });
         assert_eq!(
             Ok((expected_operands, expected_operands_mem_addresses)),
             vm.compute_operands(&instruction)
