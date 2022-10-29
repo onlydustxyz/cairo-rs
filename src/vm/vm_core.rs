@@ -409,6 +409,7 @@ impl VirtualMachine {
 
     fn run_instruction(&mut self, instruction: Instruction) -> Result<(), VirtualMachineError> {
         let (operands, operands_mem_addresses) = self.compute_operands(&instruction)?;
+        self.update_operands(&operands, &operands_mem_addresses)?;
         self.opcode_assertions(&instruction, &operands)?;
 
         if let Some(ref mut trace) = &mut self.trace {
@@ -420,8 +421,7 @@ impl VirtualMachine {
         }
 
         if let Some(ref mut accessed_addresses) = self.accessed_addresses {
-            let op_addrs =
-                operands_mem_addresses.ok_or(VirtualMachineError::InvalidInstructionEncoding)?;
+            let op_addrs = operands_mem_addresses;
             let addresses = [
                 op_addrs.dst_addr,
                 op_addrs.op0_addr,
@@ -545,9 +545,9 @@ impl VirtualMachine {
     /// Compute operands and result, trying to deduce them if normal memory access returns a None
     /// value.
     fn compute_operands(
-        &mut self,
+        &self,
         instruction: &Instruction,
-    ) -> Result<(Operands, Option<OperandsAddresses>), VirtualMachineError> {
+    ) -> Result<(Operands, OperandsAddresses), VirtualMachineError> {
         //Get operands from memory
         let dst_addr = self.run_context.compute_dst_addr(instruction)?;
         let dst_op = self
@@ -581,18 +581,12 @@ impl VirtualMachine {
                 self.compute_op0_deductions(&op0_addr, &mut res, instruction, &dst_op, &op1_op)?
             }
         };
-        self.memory
-            .insert(&op0_addr, &op0)
-            .map_err(VirtualMachineError::MemoryError)?;
 
         //Deduce op1 if it wasnt previously computed
         let op1 = match op1_op {
             Some(op1) => op1,
             None => self.compute_op1_deductions(&op1_addr, &mut res, instruction, &dst_op, &op0)?,
         };
-        self.memory
-            .insert(&op1_addr, &op1)
-            .map_err(VirtualMachineError::MemoryError)?;
 
         //Compute res if it wasnt previously deduced
         if res.is_none() {
@@ -604,20 +598,31 @@ impl VirtualMachine {
             Some(dst) => dst,
             None => self.compute_dst_deductions(instruction, &res)?,
         };
-        self.memory
-            .insert(&dst_addr, &dst)
-            .map_err(VirtualMachineError::MemoryError)?;
 
-        let accessed_addresses = if self.accessed_addresses.is_some() {
-            Some(OperandsAddresses {
-                dst_addr,
-                op0_addr,
-                op1_addr,
-            })
-        } else {
-            None
+        let accessed_addresses = OperandsAddresses {
+            dst_addr,
+            op0_addr,
+            op1_addr,
         };
         Ok((Operands { dst, op0, op1, res }, accessed_addresses))
+    }
+
+    fn update_operands(
+        &mut self,
+        operands: &Operands,
+        operands_mem_addresses: &OperandsAddresses,
+    ) -> Result<(), VirtualMachineError> {
+        self.memory
+            .insert(&operands_mem_addresses.op0_addr, &operands.op0)
+            .map_err(VirtualMachineError::MemoryError)?;
+        self.memory
+            .insert(&operands_mem_addresses.op1_addr, &operands.op1)
+            .map_err(VirtualMachineError::MemoryError)?;
+        self.memory
+            .insert(&operands_mem_addresses.dst_addr, &operands.dst)
+            .map_err(VirtualMachineError::MemoryError)?;
+
+        Ok(())
     }
 
     ///Makes sure that all assigned memory cells are consistent with their auto deduction rules.
@@ -2115,11 +2120,11 @@ mod tests {
             op1: op1_addr_value.clone(),
         };
 
-        let expected_addresses = Some(OperandsAddresses {
+        let expected_addresses = OperandsAddresses {
             dst_addr: dst_addr.get_relocatable().unwrap().clone(),
             op0_addr: op0_addr.get_relocatable().unwrap().clone(),
             op1_addr: op1_addr.get_relocatable().unwrap().clone(),
-        });
+        };
 
         let (operands, addresses) = vm.compute_operands(&inst).unwrap();
         assert!(operands == expected_operands);
@@ -2166,11 +2171,11 @@ mod tests {
             op1: op1_addr_value.clone(),
         };
 
-        let expected_addresses = Some(OperandsAddresses {
+        let expected_addresses = OperandsAddresses {
             dst_addr: dst_addr.get_relocatable().unwrap().clone(),
             op0_addr: op0_addr.get_relocatable().unwrap().clone(),
             op1_addr: op1_addr.get_relocatable().unwrap().clone(),
-        });
+        };
 
         let (operands, addresses) = vm.compute_operands(&inst).unwrap();
         assert!(operands == expected_operands);
@@ -2209,11 +2214,11 @@ mod tests {
             op1: mayberelocatable!(4),
         };
 
-        let expected_addresses = Some(OperandsAddresses {
+        let expected_addresses = OperandsAddresses {
             dst_addr: relocatable!(1, 1),
             op0_addr: relocatable!(1, 1),
             op1_addr: relocatable!(0, 1),
-        });
+        };
 
         let (operands, addresses) = vm.compute_operands(&instruction).unwrap();
         assert!(operands == expected_operands);
@@ -2769,11 +2774,11 @@ mod tests {
                 b"3270867057177188607814717243084834301278723532952411121381966378910183338911"
             )),
         };
-        let expected_operands_mem_addresses = Some(OperandsAddresses {
+        let expected_operands_mem_addresses = OperandsAddresses {
             dst_addr: Relocatable::from((1, 13)),
             op0_addr: Relocatable::from((1, 7)),
             op1_addr: Relocatable::from((3, 2)),
-        });
+        };
         assert_eq!(
             Ok((expected_operands, expected_operands_mem_addresses)),
             vm.compute_operands(&instruction)
@@ -2851,11 +2856,11 @@ mod tests {
             op0: MaybeRelocatable::from((2, 0)),
             op1: MaybeRelocatable::from(bigint!(8)),
         };
-        let expected_operands_mem_addresses = Some(OperandsAddresses {
+        let expected_operands_mem_addresses = OperandsAddresses {
             dst_addr: Relocatable::from((1, 9)),
             op0_addr: Relocatable::from((1, 3)),
             op1_addr: Relocatable::from((2, 2)),
-        });
+        };
         assert_eq!(
             Ok((expected_operands, expected_operands_mem_addresses)),
             vm.compute_operands(&instruction)
