@@ -304,10 +304,10 @@ impl VirtualMachine {
     }
 
     fn deduce_memory_cell(
-        &mut self,
+        &self,
         address: &Relocatable,
     ) -> Result<Option<MaybeRelocatable>, VirtualMachineError> {
-        for (_, builtin) in self.builtin_runners.iter_mut() {
+        for (_, builtin) in self.builtin_runners.iter() {
             if builtin.base() == address.segment_index {
                 match builtin.deduce_memory_cell(address, &self.memory) {
                     Ok(maybe_reloc) => return Ok(maybe_reloc),
@@ -2659,7 +2659,7 @@ mod tests {
 
     #[test]
     fn deduce_memory_cell_no_pedersen_builtin() {
-        let mut vm = vm!();
+        let vm = vm!();
         assert_eq!(vm.deduce_memory_cell(&Relocatable::from((0, 0))), Ok(None));
     }
 
