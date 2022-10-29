@@ -21,6 +21,8 @@ use num_integer::Integer;
 use num_traits::{ToPrimitive, Zero};
 use std::{any::Any, borrow::Cow, collections::HashMap};
 
+use super::hook::Hook;
+
 #[derive(PartialEq, Debug)]
 pub struct Operands {
     dst: MaybeRelocatable,
@@ -30,7 +32,7 @@ pub struct Operands {
 }
 
 #[derive(PartialEq, Debug)]
-struct OperandsAddresses {
+pub struct OperandsAddresses {
     dst_addr: Relocatable,
     op0_addr: Relocatable,
     op1_addr: Relocatable,
@@ -124,13 +126,23 @@ impl VirtualMachine {
         instruction: &Instruction,
         operands: &Operands,
     ) -> Result<(), VirtualMachineError> {
+        let new_fp = self.compute_new_fp(instruction, operands)?;
+        self.run_context.fp = new_fp.offset;
+        Ok(())
+    }
+
+    pub fn compute_new_fp(
+        &self,
+        instruction: &Instruction,
+        operands: &Operands,
+    ) -> Result<Relocatable, VirtualMachineError> {
         let new_fp: Relocatable = match instruction.fp_update {
             FpUpdate::APPlus2 => self.run_context.get_ap() + 2,
             FpUpdate::Dst => operands.dst.get_relocatable()?.clone(),
-            FpUpdate::Regular => return Ok(()),
+            FpUpdate::Regular => self.run_context.get_fp(),
         };
-        self.run_context.fp = new_fp.offset;
-        Ok(())
+
+        Ok(new_fp)
     }
 
     fn update_ap(
@@ -138,6 +150,16 @@ impl VirtualMachine {
         instruction: &Instruction,
         operands: &Operands,
     ) -> Result<(), VirtualMachineError> {
+        let new_ap = self.compute_new_ap(instruction, operands)?;
+        self.run_context.ap = new_ap.offset;
+        Ok(())
+    }
+
+    pub fn compute_new_ap(
+        &self,
+        instruction: &Instruction,
+        operands: &Operands,
+    ) -> Result<Relocatable, VirtualMachineError> {
         let new_ap: Relocatable = match instruction.ap_update {
             ApUpdate::Add => match operands.res.clone() {
                 Some(res) => self.run_context.get_ap().add_maybe_mod(&res, &self.prime)?,
@@ -145,10 +167,10 @@ impl VirtualMachine {
             },
             ApUpdate::Add1 => self.run_context.get_ap() + 1,
             ApUpdate::Add2 => self.run_context.get_ap() + 2,
-            ApUpdate::Regular => return Ok(()),
+            ApUpdate::Regular => self.run_context.get_ap(),
         };
-        self.run_context.ap = new_ap.offset;
-        Ok(())
+
+        Ok(new_ap)
     }
 
     fn update_pc(
@@ -156,6 +178,16 @@ impl VirtualMachine {
         instruction: &Instruction,
         operands: &Operands,
     ) -> Result<(), VirtualMachineError> {
+        let new_pc = self.compute_new_pc(instruction, operands)?;
+        self.run_context.pc = new_pc;
+        Ok(())
+    }
+
+    pub fn compute_new_pc(
+        &self,
+        instruction: &Instruction,
+        operands: &Operands,
+    ) -> Result<Relocatable, VirtualMachineError> {
         let new_pc: Relocatable = match instruction.pc_update {
             PcUpdate::Regular => &self.run_context.pc + instruction.size(),
             PcUpdate::Jump => match operands.res.clone() {
@@ -182,8 +214,8 @@ impl VirtualMachine {
                 }
             },
         };
-        self.run_context.pc = new_pc;
-        Ok(())
+
+        Ok(new_pc)
     }
 
     fn update_registers(
@@ -483,8 +515,13 @@ impl VirtualMachine {
         exec_scopes: &mut ExecutionScopes,
         hint_data_dictionary: &HashMap<usize, Vec<Box<dyn Any>>>,
         constants: &HashMap<String, BigInt>,
+        hooks: &Vec<Hook>,
     ) -> Result<(), VirtualMachineError> {
         self.step_hint(hint_executor, exec_scopes, hint_data_dictionary, constants)?;
+        let instruction = self.decode_current_instruction()?;
+        for hook in hooks {
+            hook.execute(self, &instruction, exec_scopes, constants)?
+        }
         self.step_instruction()
     }
 
@@ -544,7 +581,7 @@ impl VirtualMachine {
 
     /// Compute operands and result, trying to deduce them if normal memory access returns a None
     /// value.
-    fn compute_operands(
+    pub fn compute_operands(
         &self,
         instruction: &Instruction,
     ) -> Result<(Operands, OperandsAddresses), VirtualMachineError> {
@@ -2229,7 +2266,8 @@ mod tests {
                 &hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
+                &Vec::new(),
             ),
             Ok(())
         );
@@ -2433,7 +2471,8 @@ mod tests {
                 &hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
+                &Vec::new(),
             ),
             Ok(())
         );
@@ -2514,7 +2553,8 @@ mod tests {
                     &hint_processor,
                     exec_scopes_ref!(),
                     &HashMap::new(),
-                    &HashMap::new()
+                    &HashMap::new(),
+                    &Vec::new(),
                 ),
                 Ok(())
             );
@@ -2615,7 +2655,8 @@ mod tests {
                 &hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
+                &Vec::new(),
             ),
             Ok(())
         );
@@ -2636,7 +2677,8 @@ mod tests {
                 &hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
+                &Vec::new(),
             ),
             Ok(())
         );
@@ -2658,7 +2700,8 @@ mod tests {
                 &hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
+                &Vec::new(),
             ),
             Ok(())
         );
@@ -3174,7 +3217,8 @@ mod tests {
                     &hint_processor,
                     exec_scopes_ref!(),
                     &hint_data_dictionary,
-                    &HashMap::new()
+                    &HashMap::new(),
+                    &Vec::new(),
                 ),
                 Ok(())
             );

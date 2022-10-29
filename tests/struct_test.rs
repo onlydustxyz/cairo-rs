@@ -23,7 +23,7 @@ fn struct_integration_test() {
     let end = cairo_runner.initialize(&mut vm).unwrap();
 
     assert!(
-        cairo_runner.run_until_pc(end, &mut vm, &hint_processor) == Ok(()),
+        cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()) == Ok(()),
         "Execution failed"
     );
     assert!(cairo_runner.relocate(&mut vm) == Ok(()), "Execution failed");

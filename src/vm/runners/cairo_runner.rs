@@ -13,6 +13,7 @@ use crate::{
             memory_errors::MemoryError, runner_errors::RunnerError, trace_errors::TraceError,
             vm_errors::VirtualMachineError,
         },
+        hook::Hook,
         {
             runners::builtin_runner::{
                 BitwiseBuiltinRunner, BuiltinRunner, EcOpBuiltinRunner, HashBuiltinRunner,
@@ -289,6 +290,7 @@ impl CairoRunner {
         address: Relocatable,
         vm: &mut VirtualMachine,
         hint_processor: &dyn HintProcessor,
+        hooks: &Vec<Hook>,
     ) -> Result<(), VirtualMachineError> {
         let references = self.get_reference_list();
         let hint_data_dictionary = self.get_hint_data_dictionary(&references, hint_processor)?;
@@ -298,6 +300,7 @@ impl CairoRunner {
                 &mut self.exec_scopes,
                 &hint_data_dictionary,
                 &self.program.constants,
+                hooks,
             )?;
         }
         Ok(())
@@ -1279,7 +1282,7 @@ mod tests {
         cairo_runner.initialize_vm(&mut vm).unwrap();
         //Execution Phase
         assert_eq!(
-            cairo_runner.run_until_pc(end, &mut vm, &hint_processor),
+            cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()),
             Ok(())
         );
         //Check final values against Python VM
@@ -1367,7 +1370,7 @@ mod tests {
         cairo_runner.initialize_vm(&mut vm).unwrap();
         //Execution Phase
         assert_eq!(
-            cairo_runner.run_until_pc(end, &mut vm, &hint_processor),
+            cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()),
             Ok(())
         );
         //Check final values against Python VM
@@ -1480,7 +1483,7 @@ mod tests {
         cairo_runner.initialize_vm(&mut vm).unwrap();
         //Execution Phase
         assert_eq!(
-            cairo_runner.run_until_pc(end, &mut vm, &hint_processor),
+            cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()),
             Ok(())
         );
         //Check final values against Python VM
@@ -1621,7 +1624,7 @@ mod tests {
         cairo_runner.initialize_vm(&mut vm).unwrap();
         //Execution Phase
         assert_eq!(
-            cairo_runner.run_until_pc(end, &mut vm, &hint_processor),
+            cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()),
             Ok(())
         );
         //Check final values against Python VM
@@ -1868,7 +1871,7 @@ mod tests {
         let end = cairo_runner.initialize_main_entrypoint(&mut vm).unwrap();
         cairo_runner.initialize_vm(&mut vm).unwrap();
         assert_eq!(
-            cairo_runner.run_until_pc(end, &mut vm, &hint_processor),
+            cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()),
             Ok(())
         );
         vm.segments.compute_effective_sizes(&vm.memory);
@@ -2010,7 +2013,7 @@ mod tests {
         let end = cairo_runner.initialize_main_entrypoint(&mut vm).unwrap();
         cairo_runner.initialize_vm(&mut vm).unwrap();
         assert_eq!(
-            cairo_runner.run_until_pc(end, &mut vm, &hint_processor),
+            cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()),
             Ok(())
         );
         vm.segments.compute_effective_sizes(&vm.memory);
@@ -2202,7 +2205,7 @@ mod tests {
         //Execution Phase
         let hint_processor = BuiltinHintProcessor::new_empty();
         assert_eq!(
-            cairo_runner.run_until_pc(end, &mut vm, &hint_processor),
+            cairo_runner.run_until_pc(end, &mut vm, &hint_processor, &Vec::new()),
             Ok(())
         );
         let mut stdout = Vec::<u8>::new();

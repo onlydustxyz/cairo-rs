@@ -26,7 +26,7 @@ pub fn cairo_run<'a>(
     let end = cairo_runner.initialize(&mut vm)?;
 
     cairo_runner
-        .run_until_pc(end, &mut vm, hint_executor)
+        .run_until_pc(end, &mut vm, hint_executor, &Vec::new())
         .map_err(CairoRunError::VirtualMachine)?;
 
     vm.verify_auto_deductions()
@@ -147,7 +147,7 @@ mod tests {
             .map_err(CairoRunError::Runner)?;
 
         assert!(cairo_runner
-            .run_until_pc(end, &mut vm, hint_processor)
+            .run_until_pc(end, &mut vm, hint_processor, &Vec::new())
             .is_ok());
 
         Ok((cairo_runner, vm))
@@ -163,7 +163,7 @@ mod tests {
 
         let end = cairo_runner.initialize(&mut vm).unwrap();
         assert!(cairo_runner
-            .run_until_pc(end, &mut vm, &hint_processor)
+            .run_until_pc(end, &mut vm, &hint_processor, &Vec::new())
             .is_ok());
         assert!(cairo_runner.relocate(&mut vm).is_ok());
         // `main` returns without doing nothing, but `not_main` sets `[ap]` to `1`
@@ -280,7 +280,7 @@ mod tests {
         let mut vm = vm!();
         let end = cairo_runner.initialize(&mut vm).unwrap();
         assert!(cairo_runner
-            .run_until_pc(end, &mut vm, &hint_processor)
+            .run_until_pc(end, &mut vm, &hint_processor, &Vec::new())
             .is_ok());
         assert!(vm.trace.is_none());
     }
