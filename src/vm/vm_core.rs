@@ -665,6 +665,9 @@ impl VirtualMachine {
                 self.compute_op0_deductions(&op0_addr, &mut res, instruction, &dst_op, &op1_op)?
             }
         };
+        self.memory
+            .insert(&op0_addr, &op0)
+            .map_err(VirtualMachineError::MemoryError)?;
 
         //Deduce op1 if it wasnt previously computed
         let op1 = match op1_op {
@@ -674,6 +677,9 @@ impl VirtualMachine {
                 self.compute_op1_deductions(&op1_addr, &mut res, instruction, &dst_op, &op0)?
             }
         };
+        self.memory
+            .insert(&op1_addr, &op1)
+            .map_err(VirtualMachineError::MemoryError)?;
 
         //Compute res if it wasnt previously deduced
         if res.is_none() {
