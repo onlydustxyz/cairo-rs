@@ -665,9 +665,6 @@ impl VirtualMachine {
                 self.compute_op0_deductions(&op0_addr, &mut res, instruction, &dst_op, &op1_op)?
             }
         };
-        self.memory
-            .insert(&op0_addr, &op0)
-            .map_err(VirtualMachineError::MemoryError)?;
 
         //Deduce op1 if it wasnt previously computed
         let op1 = match op1_op {
@@ -677,9 +674,6 @@ impl VirtualMachine {
                 self.compute_op1_deductions(&op1_addr, &mut res, instruction, &dst_op, &op0)?
             }
         };
-        self.memory
-            .insert(&op1_addr, &op1)
-            .map_err(VirtualMachineError::MemoryError)?;
 
         //Compute res if it wasnt previously deduced
         if res.is_none() {
@@ -704,6 +698,24 @@ impl VirtualMachine {
             accessed_addresses,
             deduced_operands,
         ))
+    }
+
+    fn update_operands(
+        &mut self,
+        operands: &Operands,
+        operands_mem_addresses: &OperandsAddresses,
+    ) -> Result<(), VirtualMachineError> {
+        self.memory
+            .insert(&operands_mem_addresses.op0_addr, &operands.op0)
+            .map_err(VirtualMachineError::MemoryError)?;
+        self.memory
+            .insert(&operands_mem_addresses.op1_addr, &operands.op1)
+            .map_err(VirtualMachineError::MemoryError)?;
+        self.memory
+            .insert(&operands_mem_addresses.dst_addr, &operands.dst)
+            .map_err(VirtualMachineError::MemoryError)?;
+
+        Ok(())
     }
 
     ///Makes sure that all assigned memory cells are consistent with their auto deduction rules.
