@@ -1,7 +1,10 @@
 use crate::{
     any_box,
     hint_processor::builtin_hint_processor::dict_manager::DictManager,
-    vm::errors::{exec_scope_errors::ExecScopeError, vm_errors::VirtualMachineError},
+    vm::{
+        errors::{exec_scope_errors::ExecScopeError, vm_errors::VirtualMachineError},
+        hook::Hooks,
+    },
 };
 use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -157,13 +160,26 @@ impl ExecutionScopes {
 
     ///Returns the value in the dict manager
     pub fn get_dict_manager(&self) -> Result<Rc<RefCell<DictManager>>, VirtualMachineError> {
+        let key = "dict_manager";
         let mut val: Option<Rc<RefCell<DictManager>>> = None;
-        if let Some(variable) = self.get_local_variables()?.get("dict_manager") {
+        if let Some(variable) = self.get_local_variables()?.get(key) {
             if let Some(dict_manager) = variable.downcast_ref::<Rc<RefCell<DictManager>>>() {
                 val = Some(dict_manager.clone());
             }
         }
-        val.ok_or_else(|| VirtualMachineError::VariableNotInScopeError("dict_manager".to_string()))
+        val.ok_or_else(|| VirtualMachineError::VariableNotInScopeError(key.to_string()))
+    }
+
+    ///Returns hooks
+    pub fn get_hooks(&self) -> Result<Hooks, VirtualMachineError> {
+        let key = "hooks";
+        let mut val = None;
+        if let Some(variable) = self.get_local_variables()?.get(key) {
+            if let Some(hooks) = variable.downcast_ref::<Hooks>() {
+                val = Some(hooks.clone());
+            }
+        }
+        val.ok_or_else(|| VirtualMachineError::VariableNotInScopeError(key.to_string()))
     }
 
     ///Returns a mutable reference to the value in the current execution scope that matches the name and is of the given type

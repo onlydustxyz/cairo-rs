@@ -184,6 +184,16 @@ impl VirtualMachine {
         instruction: &Instruction,
         operands: &Operands,
     ) -> Result<(), VirtualMachineError> {
+        let new_ap = self.compute_new_ap(instruction, operands)?;
+        self.run_context.ap = new_ap.offset;
+        Ok(())
+    }
+
+    pub fn compute_new_ap(
+        &self,
+        instruction: &Instruction,
+        operands: &Operands,
+    ) -> Result<Relocatable, VirtualMachineError> {
         let new_ap: Relocatable = match instruction.ap_update {
             ApUpdate::Add => match operands.res.clone() {
                 Some(res) => self.run_context.get_ap().add_maybe_mod(&res, &self.prime)?,
@@ -191,10 +201,10 @@ impl VirtualMachine {
             },
             ApUpdate::Add1 => self.run_context.get_ap() + 1,
             ApUpdate::Add2 => self.run_context.get_ap() + 2,
-            ApUpdate::Regular => return Ok(()),
+            ApUpdate::Regular => self.run_context.get_ap(),
         };
-        self.run_context.ap = new_ap.offset;
-        Ok(())
+
+        Ok(new_ap)
     }
 
     fn update_pc(
@@ -202,6 +212,16 @@ impl VirtualMachine {
         instruction: &Instruction,
         operands: &Operands,
     ) -> Result<(), VirtualMachineError> {
+        let new_pc = self.compute_new_pc(instruction, operands)?;
+        self.run_context.pc = new_pc;
+        Ok(())
+    }
+
+    pub fn compute_new_pc(
+        &self,
+        instruction: &Instruction,
+        operands: &Operands,
+    ) -> Result<Relocatable, VirtualMachineError> {
         let new_pc: Relocatable = match instruction.pc_update {
             PcUpdate::Regular => self.run_context.pc + instruction.size(),
             PcUpdate::Jump => match &operands.res {
@@ -228,8 +248,8 @@ impl VirtualMachine {
                 }
             },
         };
-        self.run_context.pc = new_pc;
-        Ok(())
+
+        Ok(new_pc)
     }
 
     fn update_registers(
@@ -499,7 +519,7 @@ impl VirtualMachine {
         Ok(())
     }
 
-    fn decode_current_instruction(&self) -> Result<Instruction, VirtualMachineError> {
+    pub fn decode_current_instruction(&self) -> Result<Instruction, VirtualMachineError> {
         let (instruction_ref, imm) = self.get_instruction_encoding()?;
         match instruction_ref.to_i64() {
             Some(instruction) => {
@@ -559,6 +579,12 @@ impl VirtualMachine {
         constants: &HashMap<String, BigInt>,
     ) -> Result<(), VirtualMachineError> {
         self.step_hint(hint_executor, exec_scopes, hint_data_dictionary, constants)?;
+
+        #[cfg(feature = "hooks")]
+        if let Ok(hooks) = exec_scopes.get_hooks() {
+            hooks.execute_pre_step_instruction(self, exec_scopes, constants)?;
+        }
+
         self.step_instruction()
     }
 
@@ -2488,7 +2514,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
             ),
             Ok(())
         );
@@ -2727,7 +2753,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
             ),
             Ok(())
         );
@@ -2807,7 +2833,7 @@ mod tests {
                     &mut hint_processor,
                     exec_scopes_ref!(),
                     &HashMap::new(),
-                    &HashMap::new()
+                    &HashMap::new(),
                 ),
                 Ok(())
             );
@@ -2903,7 +2929,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
             ),
             Ok(())
         );
@@ -2924,7 +2950,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
             ),
             Ok(())
         );
@@ -2946,7 +2972,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &HashMap::new(),
-                &HashMap::new()
+                &HashMap::new(),
             ),
             Ok(())
         );
@@ -3484,7 +3510,7 @@ mod tests {
                     &mut hint_processor,
                     exec_scopes_ref!(),
                     &hint_data_dictionary,
-                    &HashMap::new()
+                    &HashMap::new(),
                 ),
                 Ok(())
             );
