@@ -26,7 +26,7 @@ pub trait BuiltinRunner {
     fn base(&self) -> isize;
     fn add_validation_rule(&self, memory: &mut Memory) -> Result<(), RunnerError>;
     fn deduce_memory_cell(
-        &mut self,
+        &self,
         address: &Relocatable,
         memory: &Memory,
     ) -> Result<Option<MaybeRelocatable>, RunnerError>;

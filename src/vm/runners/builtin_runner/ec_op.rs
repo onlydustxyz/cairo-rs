@@ -99,7 +99,7 @@ impl BuiltinRunner for EcOpBuiltinRunner {
     }
 
     fn deduce_memory_cell(
-        &mut self,
+        &self,
         address: &Relocatable,
         memory: &Memory,
     ) -> Result<Option<MaybeRelocatable>, RunnerError> {
@@ -412,7 +412,7 @@ mod tests {
                 )
             )
         ];
-        let mut builtin = EcOpBuiltinRunner::new(256);
+        let builtin = EcOpBuiltinRunner::new(256);
 
         let result = builtin.deduce_memory_cell(&Relocatable::from((3, 6)), &memory);
         assert_eq!(
@@ -457,7 +457,7 @@ mod tests {
             )
         ];
 
-        let mut builtin = EcOpBuiltinRunner::new(256);
+        let builtin = EcOpBuiltinRunner::new(256);
         let result = builtin.deduce_memory_cell(&Relocatable::from((3, 6)), &memory);
         assert_eq!(result, Ok(None));
     }
@@ -502,7 +502,7 @@ mod tests {
                 )
             )
         ];
-        let mut builtin = EcOpBuiltinRunner::new(256);
+        let builtin = EcOpBuiltinRunner::new(256);
 
         let result = builtin.deduce_memory_cell(&Relocatable::from((3, 3)), &memory);
         assert_eq!(result, Ok(None));
@@ -542,7 +542,7 @@ mod tests {
                 )
             )
         ];
-        let mut builtin = EcOpBuiltinRunner::new(256);
+        let builtin = EcOpBuiltinRunner::new(256);
 
         assert_eq!(
             builtin.deduce_memory_cell(&Relocatable::from((3, 6)), &memory),
@@ -597,14 +597,12 @@ mod tests {
                 )
             )
         ];
-        let mut builtin = EcOpBuiltinRunner::new(256);
+        let builtin = EcOpBuiltinRunner::new(256);
 
         let error = builtin.deduce_memory_cell(&Relocatable::from((3, 6)), &memory);
         assert_eq!(
             error,
-            Err(RunnerError::EcOpBuiltinScalarLimit(
-                builtin.scalar_limit.clone()
-            ))
+            Err(RunnerError::EcOpBuiltinScalarLimit(builtin.scalar_limit))
         );
     }
 
