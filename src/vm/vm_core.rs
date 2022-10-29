@@ -613,8 +613,8 @@ impl VirtualMachine {
     }
 
     ///Makes sure that all assigned memory cells are consistent with their auto deduction rules.
-    pub fn verify_auto_deductions(&mut self) -> Result<(), VirtualMachineError> {
-        for (name, builtin) in self.builtin_runners.iter_mut() {
+    pub fn verify_auto_deductions(&self) -> Result<(), VirtualMachineError> {
+        for (name, builtin) in self.builtin_runners.iter() {
             let index: usize = builtin
                 .base()
                 .try_into()
