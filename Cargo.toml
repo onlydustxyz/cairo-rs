@@ -8,6 +8,7 @@ edition = "2021"
 [features]
 default = ["with_mimalloc"]
 with_mimalloc = []
+hooks = []
 
 [dependencies]
 mimalloc = { version = "0.1.29", default-features = false }
@@ -17,14 +18,14 @@ num-integer = "0.1.45"
 serde = { version = "1.0", features = ["derive"] }
 serde_bytes = "0.11.1"
 serde_json = { version = "1.0", features = ["arbitrary_precision"] }
-hex = "0.4.3" 
+hex = "0.4.3"
 bincode = "1.2.1"
 starknet-crypto = "0.1.0"
 clap = { version = "3.2.5", features = ["derive"] }
 sha3 = "0.10.1"
 lazy_static = "1.4.0"
 nom = "7"
-sha2 = {version="0.10.2", features=["compress"]}
+sha2 = { version = "0.10.2", features = ["compress"] }
 thiserror = "1.0.32"
 generic-array = "0.14.6"
 # This crate has only one function `take_until_unbalanced` that is
