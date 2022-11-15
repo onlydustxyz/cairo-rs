@@ -1,5 +1,5 @@
 use crate::serde::deserialize_program::{
-    deserialize_program, HintParams, Identifier, ReferenceManager,
+    deserialize_program, HintParams, Identifier, ReferenceManager, ProgramJson, deserialize_from_program_json
 };
 use crate::types::errors::program_errors::ProgramError;
 use crate::types::relocatable::MaybeRelocatable;
@@ -21,6 +21,9 @@ pub struct Program {
 impl Program {
     pub fn new(path: &Path, entrypoint: &str) -> Result<Program, ProgramError> {
         deserialize_program(path, entrypoint)
+    }
+    pub fn from_json(program: ProgramJson, entrypoint: &str) -> Result<Program, ProgramError> {
+        deserialize_from_program_json(program, entrypoint)
     }
 }
 

@@ -263,6 +263,7 @@ pub fn deserialize_value_address<'de, D: Deserializer<'de>>(
     d.deserialize_str(ValueAddressVisitor)
 }
 
+// pub fn deserialize_from_path_to_json(path: &Path) -> Result<ProgramJson, ProgramError> {
 pub fn deserialize_program_json(path: &Path) -> Result<ProgramJson, ProgramError> {
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
@@ -272,9 +273,8 @@ pub fn deserialize_program_json(path: &Path) -> Result<ProgramJson, ProgramError
     Ok(program_json)
 }
 
-pub fn deserialize_program(path: &Path, entrypoint: &str) -> Result<Program, ProgramError> {
-    let program_json: ProgramJson = deserialize_program_json(path)?;
-
+// pub fn deserialize_from_json_to_program(program_json: ProgramJson, entrypoint: &str) -> Result<Program, ProgramError> {
+pub fn deserialize_from_program_json(program_json: ProgramJson, entrypoint: &str) -> Result<Program, ProgramError> {
     let entrypoint_pc = match program_json
         .identifiers
         .get(&format!("__main__.{}", entrypoint))
@@ -305,6 +305,12 @@ pub fn deserialize_program(path: &Path, entrypoint: &str) -> Result<Program, Pro
         reference_manager: program_json.reference_manager,
         identifiers: program_json.identifiers,
     })
+}
+
+pub fn deserialize_program(path: &Path, entrypoint: &str) -> Result<Program, ProgramError> {
+    let program_json: ProgramJson = deserialize_program_json(path)?;
+
+    deserialize_from_program_json(program_json, entrypoint)
 }
 
 #[cfg(test)]
