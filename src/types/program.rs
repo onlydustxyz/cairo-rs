@@ -1,5 +1,6 @@
 use crate::serde::deserialize_program::{
-    deserialize_program, Attribute, HintParams, Identifier, InstructionLocation, ReferenceManager,
+    deserialize_program, Attribute, HintParams, Identifier, InstructionLocation, ProgramJson,
+    ReferenceManager,
 };
 use crate::types::errors::program_errors::ProgramError;
 use crate::types::relocatable::MaybeRelocatable;
@@ -79,6 +80,9 @@ impl Program {
         entrypoint: Option<&str>,
     ) -> Result<Program, ProgramError> {
         deserialize_program(reader, entrypoint)
+    }
+    pub fn from_json(program: ProgramJson, entrypoint: &str) -> Result<Program, ProgramError> {
+        deserialize_from_program_json(program, entrypoint)
     }
 }
 
