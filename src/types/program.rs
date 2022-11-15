@@ -39,7 +39,8 @@ mod tests {
     fn deserialize_program_from_json_test() {
         let program_json = deserialize_program_json(Path::new(
             "cairo_programs/manually_compiled/valid_program_a.json",
-        )).unwrap();
+        ))
+        .unwrap();
         let program = Program::from_json(program_json, "main").unwrap();
 
         test_deserialized_program(program);
