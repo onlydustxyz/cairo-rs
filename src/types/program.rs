@@ -109,6 +109,7 @@ impl Default for Program {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::serde::deserialize_program::deserialize_program_json;
     use crate::{bigint, bigint_str};
     use num_traits::FromPrimitive;
 
@@ -278,6 +279,10 @@ mod tests {
         )
         .expect("Failed to deserialize program");
 
+        test_deserialized_program(program);
+    }
+
+    fn test_deserialized_program(program: Program) {
         let builtins: Vec<String> = Vec::new();
         let data: Vec<MaybeRelocatable> = vec![
             MaybeRelocatable::Int(BigInt::from_i64(5189976364521848832).unwrap()),
