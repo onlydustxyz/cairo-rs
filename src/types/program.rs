@@ -1,5 +1,6 @@
 use crate::serde::deserialize_program::{
-    deserialize_program, HintParams, Identifier, ReferenceManager, ProgramJson, deserialize_from_program_json
+    deserialize_from_program_json, deserialize_program, HintParams, Identifier, ProgramJson,
+    ReferenceManager,
 };
 use crate::types::errors::program_errors::ProgramError;
 use crate::types::relocatable::MaybeRelocatable;
@@ -30,8 +31,19 @@ impl Program {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::serde::deserialize_program::deserialize_program_json;
     use crate::{bigint, bigint_str};
     use num_traits::FromPrimitive;
+
+    #[test]
+    fn deserialize_program_from_json_test() {
+        let program_json = deserialize_program_json(Path::new(
+            "cairo_programs/manually_compiled/valid_program_a.json",
+        )).unwrap();
+        let program = Program::from_json(program_json, "main").unwrap();
+
+        test_deserialized_program(program);
+    }
 
     #[test]
     fn deserialize_program_test() {
@@ -41,6 +53,10 @@ mod tests {
         )
         .expect("Failed to deserialize program");
 
+        test_deserialized_program(program);
+    }
+
+    fn test_deserialized_program(program: Program) {
         let builtins: Vec<String> = Vec::new();
         let data: Vec<MaybeRelocatable> = vec![
             MaybeRelocatable::Int(BigInt::from_i64(5189976364521848832).unwrap()),
