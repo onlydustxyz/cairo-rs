@@ -9,7 +9,7 @@ use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer};
 use serde_json::Number;
 use std::{collections::HashMap, fmt, fs::File, io::BufReader, path::Path};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ProgramJson {
     #[serde(deserialize_with = "deserialize_bigint_hex")]
     pub prime: BigInt,
