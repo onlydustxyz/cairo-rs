@@ -53,7 +53,7 @@ pub struct VirtualMachine {
     pub(crate) memory: Memory,
     accessed_addresses: Option<Vec<Relocatable>>,
     pub(crate) trace: Option<Vec<TraceEntry>>,
-    current_step: usize,
+    pub(crate) current_step: usize,
     skip_instruction_execution: bool,
 }
 
