@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["get_perm_range_check_limits","Return the minimum and maximum values in the perm_range_check component."]],"mod":[["trace_entry",""]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["cairo_run",""],["write_binary_memory",""],["write_binary_trace","Writes a trace as a binary file. Bincode encodes to little endian by default and each trace entry is composed of 3 usize values that are padded to always reach 64 bit size."],["write_output",""]]};

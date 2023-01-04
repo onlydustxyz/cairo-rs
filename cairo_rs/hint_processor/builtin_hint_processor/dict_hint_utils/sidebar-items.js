@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["DICT_ACCESS_SIZE",""]],"fn":[["default_dict_new",""],["dict_new",""],["dict_read",""],["dict_squash_copy_dict",""],["dict_squash_update_ptr",""],["dict_update",""],["dict_write",""]]};
