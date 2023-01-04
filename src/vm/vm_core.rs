@@ -1,6 +1,4 @@
-use super::{
-    errors::exec_scope_errors::ExecScopeError, runners::builtin_runner::SignatureBuiltinRunner,
-};
+use super::errors::exec_scope_errors::ExecScopeError;
 use crate::{
     bigint,
     hint_processor::{
@@ -26,7 +24,7 @@ use crate::{
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{ToPrimitive, Zero};
-use std::{any::Any, borrow::Cow, collections::HashMap};
+use std::{any::Any, borrow::Cow, collections::HashMap, ops::Add};
 
 const MAX_TRACEBACK_ENTRIES: u32 = 20;
 
@@ -730,24 +728,6 @@ impl VirtualMachine {
             accessed_addresses,
             deduced_operands,
         ))
-    }
-
-    fn update_operands(
-        &mut self,
-        operands: &Operands,
-        operands_mem_addresses: &OperandsAddresses,
-    ) -> Result<(), VirtualMachineError> {
-        self.memory
-            .insert(&operands_mem_addresses.op0_addr, &operands.op0)
-            .map_err(VirtualMachineError::MemoryError)?;
-        self.memory
-            .insert(&operands_mem_addresses.op1_addr, &operands.op1)
-            .map_err(VirtualMachineError::MemoryError)?;
-        self.memory
-            .insert(&operands_mem_addresses.dst_addr, &operands.dst)
-            .map_err(VirtualMachineError::MemoryError)?;
-
-        Ok(())
     }
 
     ///Makes sure that all assigned memory cells are consistent with their auto deduction rules.

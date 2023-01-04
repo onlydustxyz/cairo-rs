@@ -1,6 +1,5 @@
 use crate::serde::deserialize_program::{
-    deserialize_program, Attribute, HintParams, Identifier, InstructionLocation, ProgramJson,
-    ReferenceManager,
+    deserialize_program, Attribute, HintParams, Identifier, InstructionLocation, ReferenceManager,
 };
 use crate::types::errors::program_errors::ProgramError;
 use crate::types::relocatable::MaybeRelocatable;
@@ -81,9 +80,6 @@ impl Program {
     ) -> Result<Program, ProgramError> {
         deserialize_program(reader, entrypoint)
     }
-    pub fn from_json(program: ProgramJson, entrypoint: &str) -> Result<Program, ProgramError> {
-        deserialize_from_program_json(program, entrypoint)
-    }
 }
 
 impl Default for Program {
@@ -109,7 +105,6 @@ impl Default for Program {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::serde::deserialize_program::deserialize_program_json;
     use crate::{bigint, bigint_str};
     use num_traits::FromPrimitive;
 
