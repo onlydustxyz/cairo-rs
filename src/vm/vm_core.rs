@@ -585,10 +585,21 @@ impl VirtualMachine {
         self.step_hint(hint_executor, exec_scopes, hint_data_dictionary, constants)?;
 
         #[cfg(feature = "hooks")]
-        if let Ok(hooks) = exec_scopes.get_hooks() {
-            hooks.execute_pre_step_instruction(self, exec_scopes, constants)?;
+        {
+            if let Ok(hooks) = exec_scopes.get_hooks() {
+                hooks.execute_pre_step_instruction(self, exec_scopes, constants)?;
+            }
+
+            let res = self.step_instruction();
+
+            if let Ok(hooks) = exec_scopes.get_hooks() {
+                hooks.execute_post_step_instruction(self, exec_scopes, constants)?;
+            }
+
+            res
         }
 
+        #[cfg(not(feature = "hooks"))]
         self.step_instruction()
     }
 
