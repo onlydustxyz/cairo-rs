@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Dictionary",""]],"struct":[["DictManager","Manages dictionaries in a Cairo program. Uses the segment index to associate the corresponding python dict with the Cairo dict."],["DictTracker","Tracks the python dict associated with a Cairo dict."]]};

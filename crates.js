@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["cleopatra_cairo"];
+window.ALL_CRATES = ["cairo_rs"];

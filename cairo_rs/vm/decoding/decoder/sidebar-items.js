@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["decode_instruction","Decodes an instruction. The encoding is little endian, so flags go from bit 63 to 48."]]};

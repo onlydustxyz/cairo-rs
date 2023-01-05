@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["from_relocatable_to_indexes",""],["is_subsequence",""],["to_field_element","Converts val to an integer in the range (-prime/2, prime/2) which is equivalent to val modulo prime."]]};
