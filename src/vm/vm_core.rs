@@ -689,6 +689,10 @@ impl VirtualMachine {
     pub fn add_memory_segment(&mut self) -> Relocatable {
         self.segments.add(&mut self.memory)
     }
+    
+    pub fn get_current_step(&self) -> &usize {
+        &self.current_step
+    }
 
     pub fn get_ap(&self) -> Relocatable {
         self.run_context.get_ap()
