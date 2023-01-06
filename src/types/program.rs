@@ -1,5 +1,6 @@
 use crate::serde::deserialize_program::{
-    deserialize_program, Attribute, HintParams, Identifier, InstructionLocation, ReferenceManager,
+    deserialize_program, deserialize_program_from_json, Attribute, HintParams, Identifier,
+    InstructionLocation, ProgramJson, ReferenceManager,
 };
 use crate::types::errors::program_errors::ProgramError;
 use crate::types::relocatable::MaybeRelocatable;
@@ -80,6 +81,13 @@ impl Program {
     ) -> Result<Program, ProgramError> {
         deserialize_program(reader, entrypoint)
     }
+
+    pub fn from_json(
+        program: ProgramJson,
+        entrypoint: Option<&str>,
+    ) -> Result<Program, ProgramError> {
+        deserialize_program_from_json(program, entrypoint)
+    }
 }
 
 impl Default for Program {
@@ -105,6 +113,7 @@ impl Default for Program {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::serde::deserialize_program::deserialize_program_json;
     use crate::{bigint, bigint_str};
     use num_traits::FromPrimitive;
 
@@ -264,6 +273,19 @@ mod tests {
         );
 
         assert!(program.is_err());
+    }
+
+    #[test]
+    fn deserialize_program_from_json_test() {
+        let file = File::open(Path::new(
+            "cairo_programs/manually_compiled/valid_program_a.json",
+        ))
+        .unwrap();
+        let reader = BufReader::new(file);
+        let program_json = deserialize_program_json(reader).unwrap();
+        let program = Program::from_json(program_json, Some("main")).unwrap();
+
+        test_deserialized_program(program);
     }
 
     #[test]
