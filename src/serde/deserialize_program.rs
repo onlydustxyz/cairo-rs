@@ -9,7 +9,7 @@ use serde_json::Number;
 use std::io::Read;
 use std::{collections::HashMap, fmt};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ProgramJson {
     #[serde(deserialize_with = "deserialize_bigint_hex")]
     pub prime: BigInt,
@@ -95,7 +95,7 @@ pub struct Location {
     pub start_col: u32,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 pub struct DebugInfo {
     instruction_locations: HashMap<usize, InstructionLocation>,
 }
@@ -313,12 +313,10 @@ pub fn deserialize_program_json(reader: impl Read) -> Result<ProgramJson, Progra
     Ok(program_json)
 }
 
-pub fn deserialize_program(
-    reader: impl Read,
+pub fn deserialize_program_from_json(
+    program_json: ProgramJson,
     entrypoint: Option<&str>,
 ) -> Result<Program, ProgramError> {
-    let program_json: ProgramJson = deserialize_program_json(reader)?;
-
     let entrypoint_pc = match entrypoint {
         Some(entrypoint) => match program_json
             .identifiers
@@ -372,6 +370,14 @@ pub fn deserialize_program(
             .debug_info
             .map(|debug_info| debug_info.instruction_locations),
     })
+}
+
+pub fn deserialize_program(
+    reader: impl Read,
+    entrypoint: Option<&str>,
+) -> Result<Program, ProgramError> {
+    let program_json: ProgramJson = deserialize_program_json(reader)?;
+    deserialize_program_from_json(program_json, entrypoint)
 }
 
 #[cfg(test)]
