@@ -855,6 +855,10 @@ impl VirtualMachine {
     pub fn get_prime(&self) -> &BigInt {
         &self.prime
     }
+    
+    pub fn get_current_step(&self) -> &usize {
+        &self.current_step
+    }
 
     ///Gets the integer value corresponding to the Relocatable address
     pub fn get_integer(&self, key: &Relocatable) -> Result<Cow<BigInt>, VirtualMachineError> {
