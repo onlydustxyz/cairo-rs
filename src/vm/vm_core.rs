@@ -855,7 +855,7 @@ impl VirtualMachine {
     pub fn get_prime(&self) -> &BigInt {
         &self.prime
     }
-    
+
     pub fn get_current_step(&self) -> &usize {
         &self.current_step
     }
