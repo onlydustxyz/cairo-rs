@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673353945278,
+  "lastUpdate": 1673880393974,
   "repoUrl": "https://github.com/open-dust/cairo-rs",
   "entries": {
     "Benchmark": [
@@ -77590,6 +77590,120 @@ window.BENCHMARK_DATA = {
             "name": "cairo_run(cairo_programs/benchmarks/set_integration_benchmark.json",
             "value": 284477517,
             "range": "± 24832498",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "6120897+martinacantaro@users.noreply.github.com",
+            "name": "Martina Cantaro",
+            "username": "martinacantaro"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ef1923d7d1e118de27f2b2b39867c1d21d085029",
+          "message": "update ymls to Rust version 1.66.1 (#706)\n\n* update ymls to Rust version 1.66.1\r\n\r\n* make changes required by clippy\r\n\r\n* Revert one of the changes because Rust failed. It might have been incorrectly flagged by clippy\r\n\r\n* Ask clippy not to panic due to ann innecessary borrow: it's necessary because BigUInt doesn't have Copy implemented\r\n\r\n* Ask clippy not to panic due to ann innecessary borrow: it's necessary because BigUInt doesn't have Copy implemented\r\n\r\n* Ask clippy not to panic due to ann innecessary borrow: it's necessary because BigUInt doesn't have Copy implemented\r\n\r\n* trying this because clippy doesn't stop issuing warns about the lint\r\n\r\n* clippy fix and update clippy version\r\n\r\n* fix clippy errors\r\n\r\n* Update toolchain for IAI\r\n\r\n* Missing toolchain\r\n\r\nCo-authored-by: Martina <martina@martina>\r\nCo-authored-by: jrigada <jrigada@frba.utn.edu.ar>\r\nCo-authored-by: Mario J. Rugiero <mrugiero@gmail.com>",
+          "timestamp": "2023-01-13T16:04:28-03:00",
+          "tree_id": "4cadc08064b305555442eb0e02c0288ffa34e73b",
+          "url": "https://github.com/open-dust/cairo-rs/commit/ef1923d7d1e118de27f2b2b39867c1d21d085029"
+        },
+        "date": 1673880390272,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/compare_arrays_200000.json",
+            "value": 776873696,
+            "range": "± 2636376",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/factorial_multirun.json",
+            "value": 297749787,
+            "range": "± 2377441",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/fibonacci_1000_multirun.json",
+            "value": 138116974,
+            "range": "± 482697",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/integration_builtins.json",
+            "value": 443859086,
+            "range": "± 2393602",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/linear_search.json",
+            "value": 95066645,
+            "range": "± 448525",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/keccak_integration_benchmark.json",
+            "value": 1386682539,
+            "range": "± 10179789",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/secp_integration_benchmark.json",
+            "value": 1549741895,
+            "range": "± 9463778",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/blake2s_integration_benchmark.json",
+            "value": 1230517182,
+            "range": "± 7551023",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/dict_integration_benchmark.json",
+            "value": 868671372,
+            "range": "± 3654164",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/math_integration_benchmark.json",
+            "value": 437634366,
+            "range": "± 1962574",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/memory_integration_benchmark.json",
+            "value": 483620262,
+            "range": "± 5719284",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/math_cmp_and_pow_integration_benchmark.json",
+            "value": 19937429,
+            "range": "± 92842",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/operations_with_data_structures_benchmarks.json",
+            "value": 1871816238,
+            "range": "± 27877250",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/uint256_integration_benchmark.json",
+            "value": 1267739293,
+            "range": "± 4300996",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo_run(cairo_programs/benchmarks/set_integration_benchmark.json",
+            "value": 165378960,
+            "range": "± 516913",
             "unit": "ns/iter"
           }
         ]
