@@ -12,7 +12,12 @@ use felt::Felt;
 use num_bigint::{BigInt, ToBigInt};
 use num_integer::{div_ceil, Integer};
 use num_traits::{Num, One, Pow, Zero};
+
+#[cfg(feature = "std")]
 use std::borrow::Cow;
+
+#[cfg(not(feature = "std"))]
+use alloc::{borrow::Cow, string::String, vec::Vec};
 
 #[derive(Debug, Clone)]
 pub struct EcOpBuiltinRunner {
