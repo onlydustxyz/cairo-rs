@@ -9,7 +9,13 @@ use felt::{Felt, PRIME_STR};
 use num_traits::Num;
 use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer, Serialize};
 use serde_json::Number;
+#[cfg(feature = "std")]
 use std::{collections::HashMap, fmt, io::Read};
+
+#[cfg(not(feature = "std"))]
+use alloc::{boxed::Box, collections::BTreeMap, fmt, string::String, vec::Vec};
+#[cfg(not(feature = "std"))]
+use not_io::Read;
 
 #[derive(Deserialize, Debug)]
 pub struct ProgramJson {
@@ -17,8 +23,14 @@ pub struct ProgramJson {
     pub builtins: Vec<String>,
     #[serde(deserialize_with = "deserialize_array_of_bigint_hex")]
     pub data: Vec<MaybeRelocatable>,
+    #[cfg(feature = "std")]
     pub identifiers: HashMap<String, Identifier>,
+    #[cfg(not(feature = "std"))]
+    pub identifiers: BTreeMap<String, Identifier>,
+    #[cfg(feature = "std")]
     pub hints: HashMap<usize, Vec<HintParams>>,
+    #[cfg(not(feature = "std"))]
+    pub hints: BTreeMap<usize, Vec<HintParams>>,
     pub reference_manager: ReferenceManager,
     pub attributes: Vec<Attribute>,
     pub debug_info: Option<DebugInfo>,
@@ -34,8 +46,10 @@ pub struct HintParams {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct FlowTrackingData {
     pub ap_tracking: ApTracking,
-    #[serde(deserialize_with = "deserialize_map_to_string_and_usize_hashmap")]
+    #[cfg(feature = "std")]
     pub reference_ids: HashMap<String, usize>,
+    #[cfg(not(feature = "std"))]
+    pub reference_ids: BTreeMap<String, usize>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -69,7 +83,10 @@ pub struct Identifier {
     pub value: Option<Felt>,
 
     pub full_name: Option<String>,
+    #[cfg(feature = "std")]
     pub members: Option<HashMap<String, Member>>,
+    #[cfg(not(feature = "std"))]
+    pub members: Option<BTreeMap<String, Member>>,
     pub cairo_type: Option<String>,
 }
 
@@ -100,7 +117,10 @@ pub struct Location {
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 pub struct DebugInfo {
+    #[cfg(feature = "std")]
     instruction_locations: HashMap<usize, InstructionLocation>,
+    #[cfg(not(feature = "std"))]
+    instruction_locations: BTreeMap<usize, InstructionLocation>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
@@ -233,7 +253,10 @@ impl<'de> de::Visitor<'de> for MaybeRelocatableVisitor {
 struct ReferenceIdsVisitor;
 
 impl<'de> de::Visitor<'de> for ReferenceIdsVisitor {
+    #[cfg(feature = "std")]
     type Value = HashMap<String, usize>;
+    #[cfg(not(feature = "std"))]
+    type Value = BTreeMap<String, usize>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a map with string keys and integer values")
@@ -243,7 +266,10 @@ impl<'de> de::Visitor<'de> for ReferenceIdsVisitor {
     where
         A: MapAccess<'de>,
     {
+        #[cfg(feature = "std")]
         let mut data: HashMap<String, usize> = HashMap::new();
+        #[cfg(not(feature = "std"))]
+        let mut data: BTreeMap<String, usize> = BTreeMap::new();
 
         while let Some((key, value)) = map.next_entry::<String, usize>()? {
             data.insert(key, value);
@@ -286,9 +312,17 @@ pub fn deserialize_array_of_bigint_hex<'de, D: Deserializer<'de>>(
     d.deserialize_seq(MaybeRelocatableVisitor)
 }
 
+#[cfg(feature = "std")]
 pub fn deserialize_map_to_string_and_usize_hashmap<'de, D: Deserializer<'de>>(
     d: D,
 ) -> Result<HashMap<String, usize>, D::Error> {
+    d.deserialize_map(ReferenceIdsVisitor)
+}
+
+#[cfg(not(feature = "std"))]
+pub fn deserialize_map_to_string_and_usize_btreemap<'de, D: Deserializer<'de>>(
+    d: D,
+) -> Result<BTreeMap<String, usize>, D::Error> {
     d.deserialize_map(ReferenceIdsVisitor)
 }
 
@@ -338,7 +372,10 @@ pub fn deserialize_program(
         prime: PRIME_STR.to_string(),
         data: program_json.data,
         constants: {
+            #[cfg(feature = "std")]
             let mut constants = HashMap::new();
+            #[cfg(not(feature = "std"))]
+            let mut constants = BTreeMap::new();
             for (key, value) in program_json.identifiers.iter() {
                 if value.type_.as_deref() == Some("const") {
                     let value = value
@@ -536,7 +573,10 @@ mod tests {
             MaybeRelocatable::Int(Felt::new(2345108766317314046_i64)),
         ];
 
-        let mut hints: HashMap<usize, Vec<HintParams>> = HashMap::new();
+        #[cfg(feature = "std")]
+        let mut hints = HashMap::new();
+        #[cfg(not(feature = "std"))]
+        let mut hints: BTreeMap<usize, Vec<HintParams>> = BTreeMap::new();
         hints.insert(
             0,
             vec![HintParams {
@@ -550,7 +590,27 @@ mod tests {
                         group: 0,
                         offset: 0,
                     },
+                    #[cfg(feature = "std")]
                     reference_ids: HashMap::from([
+                        (
+                            String::from("starkware.cairo.common.math.split_felt.high"),
+                            0,
+                        ),
+                        (
+                            String::from("starkware.cairo.common.math.split_felt.low"),
+                            14,
+                        ),
+                        (
+                            String::from("starkware.cairo.common.math.split_felt.range_check_ptr"),
+                            16,
+                        ),
+                        (
+                            String::from("starkware.cairo.common.math.split_felt.value"),
+                            12,
+                        ),
+                    ]),
+                    #[cfg(not(feature = "std"))]
+                    reference_ids: BTreeMap::from([
                         (
                             String::from("starkware.cairo.common.math.split_felt.high"),
                             0,
@@ -730,7 +790,12 @@ mod tests {
             MaybeRelocatable::Int(Felt::new(2345108766317314046_i64)),
         ];
 
+        #[cfg(feature = "std")]
         let mut hints: HashMap<usize, Vec<HintParams>> = HashMap::new();
+
+        #[cfg(not(feature = "std"))]
+        let mut hints: BTreeMap<usize, Vec<HintParams>> = BTreeMap::new();
+
         hints.insert(
             0,
             vec![HintParams {
@@ -744,7 +809,11 @@ mod tests {
                         group: 0,
                         offset: 0,
                     },
+                    #[cfg(feature = "std")]
                     reference_ids: HashMap::new(),
+
+                    #[cfg(not(feature = "std"))]
+                    reference_ids: BTreeMap::new(),
                 },
             }],
         );
@@ -758,7 +827,11 @@ mod tests {
                         group: 5,
                         offset: 0,
                     },
+                    #[cfg(feature = "std")]
                     reference_ids: HashMap::new(),
+
+                    #[cfg(not(feature = "std"))]
+                    reference_ids: BTreeMap::new(),
                 },
             }],
         );
@@ -793,7 +866,11 @@ mod tests {
             MaybeRelocatable::Int(Felt::new(2345108766317314046_i64)),
         ];
 
+        #[cfg(feature = "std")]
         let mut hints: HashMap<usize, Vec<HintParams>> = HashMap::new();
+
+        #[cfg(not(feature = "std"))]
+        let mut hints: BTreeMap<usize, Vec<HintParams>> = BTreeMap::new();
         hints.insert(
             0,
             vec![HintParams {
@@ -807,7 +884,10 @@ mod tests {
                         group: 0,
                         offset: 0,
                     },
+                    #[cfg(feature = "std")]
                     reference_ids: HashMap::new(),
+                    #[cfg(not(feature = "std"))]
+                    reference_ids: BTreeMap::new(),
                 },
             }],
         );
@@ -821,7 +901,10 @@ mod tests {
                         group: 5,
                         offset: 0,
                     },
+                    #[cfg(feature = "std")]
                     reference_ids: HashMap::new(),
+                    #[cfg(not(feature = "std"))]
+                    reference_ids: BTreeMap::new(),
                 },
             }],
         );
@@ -843,7 +926,10 @@ mod tests {
         let mut reader = BufReader::new(file);
 
         let program_json: ProgramJson = serde_json::from_reader(&mut reader).unwrap();
+        #[cfg(feature = "std")]
         let mut identifiers: HashMap<String, Identifier> = HashMap::new();
+        #[cfg(not(feature = "std"))]
+        let mut identifiers: BTreeMap<String, Identifier> = BTreeMap::new();
 
         identifiers.insert(
             String::from("__main__.main"),
@@ -1048,7 +1134,10 @@ mod tests {
                         group: 14,
                         offset: 35,
                     },
+                    #[cfg(feature = "std")]
                     reference_ids: HashMap::new(),
+                    #[cfg(not(feature = "std"))]
+                    reference_ids: BTreeMap::new(),
                 }),
             },
             Attribute {
@@ -1061,7 +1150,10 @@ mod tests {
                         group: 15,
                         offset: 60,
                     },
+                    #[cfg(feature = "std")]
                     reference_ids: HashMap::new(),
+                    #[cfg(not(feature = "std"))]
+                    reference_ids: BTreeMap::new(),
                 }),
             },
         ];
@@ -1142,7 +1234,40 @@ mod tests {
         let program_json: ProgramJson = serde_json::from_str(valid_json).unwrap();
 
         let debug_info: DebugInfo = DebugInfo {
+            #[cfg(feature = "std")]
             instruction_locations: HashMap::from([
+                (
+                    0,
+                    InstructionLocation {
+                        inst: Location {
+                            end_line: 7,
+                            end_col: 73,
+                            input_file: InputFile { filename: String::from("/Users/user/test/env/lib/python3.9/site-packages/starkware/cairo/lang/compiler/lib/registers.cairo") },
+                            parent_location: None,
+                            start_line: 7,
+                            start_col: 5,
+                        },
+                        hints: vec![],
+                    },
+                ),
+                (
+                    3,
+                    InstructionLocation {
+                        inst: Location {
+                            end_line: 5,
+                            end_col: 40,
+                            input_file: InputFile { filename: String::from("/Users/user/test/env/lib/python3.9/site-packages/starkware/cairo/common/alloc.cairo") },
+                            parent_location: None,
+                            start_line: 5,
+                            start_col: 5,
+                        },
+                        hints: vec![],
+                    },
+                ),
+            ]),
+            
+            #[cfg(not(feature = "std"))]
+            instruction_locations: BTreeMap::from([
                 (
                     0,
                     InstructionLocation {
@@ -1245,7 +1370,41 @@ mod tests {
 
         let program_json: ProgramJson = serde_json::from_str(valid_json).unwrap();
 
+
+        #[cfg(feature = "std")]
         let debug_info: DebugInfo = DebugInfo { instruction_locations: HashMap::from(
+            [
+                (4, InstructionLocation {
+                    inst: Location { end_line: 9, end_col: 36,input_file: InputFile { filename: String::from("test/contracts/cairo/always_fail.cairo") }, parent_location: Some(
+                        (Box::new(Location {
+                            end_line: 9,
+                            end_col: 36,
+                            input_file: InputFile { filename: String::from("test/contracts/cairo/always_fail.cairo") },
+                            parent_location: Some(
+                                (   Box::new(Location {
+                                    end_line: 11,
+                                    end_col: 15,
+                                    input_file: InputFile { filename: String::from("test/contracts/cairo/always_fail.cairo") },
+                                    parent_location: None,
+                                    start_line: 11,
+                                    start_col: 5,
+                                }),
+                                    String::from("While trying to retrieve the implicit argument 'syscall_ptr' in:")
+                                )
+                            ),
+                            start_line: 9,
+                            start_col: 18,
+                        }),
+                            String::from("While expanding the reference 'syscall_ptr' in:")
+                        )
+                    ), start_line: 9, start_col: 18 },
+                    hints: vec![]
+                }),
+            ]
+        )};
+
+        #[cfg(not(feature = "std"))]
+        let debug_info: DebugInfo = DebugInfo { instruction_locations: BTreeMap::from(
             [
                 (4, InstructionLocation {
                     inst: Location { end_line: 9, end_col: 36,input_file: InputFile { filename: String::from("test/contracts/cairo/always_fail.cairo") }, parent_location: Some(

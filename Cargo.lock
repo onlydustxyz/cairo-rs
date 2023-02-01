@@ -189,6 +189,7 @@ dependencies = [
  "lazy_static",
  "mimalloc",
  "nom",
+ "not-io",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -714,6 +715,12 @@ dependencies = [
  "memchr",
  "minimal-lexical",
 ]
+
+[[package]]
+name = "not-io"
+version = "0.1.0-alpha"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "508616869310b47184c282511830ddfed178a19231dcc045480db91353221f58"
 
 [[package]]
 name = "num-bigint"

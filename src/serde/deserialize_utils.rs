@@ -17,7 +17,13 @@ use nom::{
 };
 use num_integer::Integer;
 use parse_hyperlinks::take_until_unbalanced;
+#[cfg(feature = "std")]
 use std::{fmt, num::ParseIntError, str::FromStr};
+
+#[cfg(not(feature = "std"))]
+use alloc::{fmt, string::String};
+#[cfg(not(feature = "std"))]
+use core::num::ParseIntError;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ReferenceParseError {
