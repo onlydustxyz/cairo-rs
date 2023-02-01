@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use super::instance_definitions::{
     builtins_instance_def::BuiltinsInstanceDef, cpu_instance_def::CpuInstanceDef,
     diluted_pool_instance_def::DilutedPoolInstanceDef,

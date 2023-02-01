@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use super::{
     bitwise_instance_def::BitwiseInstanceDef, ec_op_instance_def::EcOpInstanceDef,
     ecdsa_instance_def::EcdsaInstanceDef, keccak_instance_def::KeccakInstanceDef,

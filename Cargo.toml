@@ -11,9 +11,10 @@ description = "Blazing fast Cairo interpreter"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["with_mimalloc"]
+default = ["with_mimalloc", "std"]
 with_mimalloc = ["mimalloc"]
 skip_next_instruction_hint = []
+std = ["no-std-compat/std"]
 # This feature will reference every test-oriented feature.
 # Note that these features are not retro-compatible with the cairo Python VM.
 test_utils = ["skip_next_instruction_hint"]
@@ -34,7 +35,7 @@ sha3 = "0.10.1"
 rand_core = "0.6.4"
 lazy_static = "1.4.0"
 nom = "7"
-sha2 = {version="0.10.2", features=["compress"]}
+sha2 = { version = "0.10.2", features = ["compress"] }
 thiserror = "1.0.32"
 generic-array = "0.14.6"
 keccak = "0.1.2"
@@ -45,6 +46,7 @@ keccak = "0.1.2"
 # https://github.com/Geal/nom/issues/1253
 parse-hyperlinks = { path = "./deps/parse-hyperlinks", version = "0.23.4" }
 felt = { package = "cairo-felt", path = "./felt", version = "0.1.0" }
+no-std-compat = { features = ["alloc", "compat_hash"] }
 
 [dev-dependencies]
 iai = "0.1"

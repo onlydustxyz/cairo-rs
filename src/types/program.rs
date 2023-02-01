@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::{
     serde::deserialize_program::{
         deserialize_program, Attribute, HintParams, Identifier, InstructionLocation,

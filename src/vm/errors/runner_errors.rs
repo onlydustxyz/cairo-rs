@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use std::collections::HashSet;
 
 use super::memory_errors::MemoryError;

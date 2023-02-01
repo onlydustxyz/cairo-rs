@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::{
     hint_processor::{
         builtin_hint_processor::{
@@ -87,6 +89,7 @@ pub struct HintFunc(
         dyn Fn(
                 &mut VirtualMachine,
                 &mut ExecutionScopes,
+
                 &HashMap<String, HintReference>,
                 &ApTracking,
                 &HashMap<String, Felt>,

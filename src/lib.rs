@@ -1,4 +1,7 @@
-#![deny(warnings)]
+#![no_std]
+extern crate no_std_compat as std;
+
+#[deny(warnings)]
 pub mod cairo_run;
 pub mod hint_processor;
 pub mod math_utils;

@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::vm::errors::trace_errors::TraceError;
 use crate::{types::relocatable::Relocatable, vm::errors::memory_errors::MemoryError};
 use serde::{Deserialize, Serialize};

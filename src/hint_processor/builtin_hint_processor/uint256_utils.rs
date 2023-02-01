@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::{
     hint_processor::builtin_hint_processor::hint_utils::{
         get_integer_from_var_name, get_relocatable_from_var_name, insert_value_from_var_name,

@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use num_bigint::{BigInt, Sign};
 
 pub(crate) const CELLS_PER_HASH: u32 = 3;

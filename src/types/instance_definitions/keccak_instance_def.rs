@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct KeccakInstanceDef {
     pub(crate) _ratio: u32,

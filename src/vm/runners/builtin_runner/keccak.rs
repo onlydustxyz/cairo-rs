@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::hint_processor::builtin_hint_processor::cairo_keccak::keccak_hints::{
     maybe_reloc_vec_to_u64_array, u64_array_to_mayberelocatable_vec,
 };

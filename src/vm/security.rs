@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use num_traits::ToPrimitive;
 
 use super::{

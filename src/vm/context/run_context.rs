@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::{
     types::{
         instruction::{Instruction, Op1Addr, Register},

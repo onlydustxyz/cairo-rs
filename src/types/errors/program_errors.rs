@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use felt::PRIME_STR;
 use std::io;
 use thiserror::Error;

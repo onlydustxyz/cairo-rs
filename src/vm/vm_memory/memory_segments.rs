@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::vm::runners::cairo_runner::CairoArg;
 use crate::{
     types::relocatable::{MaybeRelocatable, Relocatable},

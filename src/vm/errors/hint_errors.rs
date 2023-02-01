@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use felt::Felt;
 use num_bigint::{BigInt, BigUint};
 use thiserror::Error;

@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::{
     relocatable,
     vm::errors::{memory_errors::MemoryError, vm_errors::VirtualMachineError},

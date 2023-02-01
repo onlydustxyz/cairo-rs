@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::types::relocatable::Relocatable;
 use felt::Felt;
 use std::ops::Shr;
@@ -132,7 +134,7 @@ pub mod test_utils {
             );
             let mut res = $mem.insert(k, v);
             while matches!(res, Err(MemoryError::UnallocatedSegment(_, _))) {
-                $mem.data.push(Vec::new());
+                $mem.data.push(std::vec::Vec::new());
                 res = $mem.insert(k, v);
             }
         };
@@ -140,7 +142,7 @@ pub mod test_utils {
             let (k, v) = (&mayberelocatable!($si, $off), &mayberelocatable!($val));
             let mut res = $mem.insert(k, v);
             while matches!(res, Err(MemoryError::UnallocatedSegment(_, _))) {
-                $mem.data.push(Vec::new());
+                $mem.data.push(std::vec::Vec::new());
                 res = $mem.insert(k, v);
             }
         };

@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use crate::{
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},

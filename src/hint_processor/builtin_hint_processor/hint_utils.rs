@@ -1,3 +1,5 @@
+use std::prelude::v1::*;
+
 use felt::Felt;
 
 use crate::hint_processor::hint_processor_definition::HintReference;
