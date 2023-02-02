@@ -227,21 +227,23 @@ impl CairoRunner {
             }
         }
 
-        let inserted_builtins = builtin_runners
-            .iter()
-            .map(|x| &x.0)
-            .collect::<HashSet<&String>>();
-        let program_builtins: HashSet<&String> =
-            self.program.builtins.iter().collect::<HashSet<&String>>();
-        // Get the builtins that belong to the program but weren't inserted (those who dont belong to the instance)
-        if !program_builtins.is_subset(&inserted_builtins) {
-            return Err(RunnerError::NoBuiltinForInstance(
-                program_builtins
-                    .difference(&inserted_builtins)
-                    .map(|x| (**x).clone())
-                    .collect(),
-                self.layout._name.clone(),
-            ));
+        {
+            let inserted_builtins = builtin_runners
+                .iter()
+                .map(|x| &x.0)
+                .collect::<HashSet<&String>>();
+            let program_builtins: HashSet<&String> =
+                self.program.builtins.iter().collect::<HashSet<&String>>();
+            // Get the builtins that belong to the program but weren't inserted (those who dont belong to the instance)
+            if !program_builtins.is_subset(&inserted_builtins) {
+                return Err(RunnerError::NoBuiltinForInstance(
+                    program_builtins
+                        .difference(&inserted_builtins)
+                        .map(|x| (**x).clone())
+                        .collect(),
+                    self.layout._name.clone(),
+                ));
+            }
         }
 
         vm.builtin_runners = builtin_runners;
@@ -906,7 +908,13 @@ impl CairoRunner {
                 .get_integer(&(base, i).into())
                 .map_err(|_| RunnerError::MemoryGet((base, i).into()))?
                 .to_bigint();
+            #[cfg(feature = "std")]
             writeln!(dest, "{}", value).map_err(|_| RunnerError::WriteFail)?;
+            #[cfg(not(feature = "std"))]
+            {
+                dest.extend(value.to_bytes_be().1);
+                dest.extend("\n".bytes());
+            }
         }
 
         Ok(())
