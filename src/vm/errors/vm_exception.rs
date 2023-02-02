@@ -1,7 +1,8 @@
 use std::prelude::v1::*;
 
+use std::fmt::{self, Display};
+#[cfg(feature = "std")]
 use std::{
-    fmt::{self, Display},
     fs::File,
     io::{BufReader, Read},
     path::Path,
@@ -235,22 +236,36 @@ impl Location {
     ///  Prints the location with the passed message.
     pub fn to_string(&self, message: &String) -> String {
         let msg_prefix = if message.is_empty() { "" } else { ": " };
-        format!(
+
+        #[cfg(feature = "std")]
+        let x = format!(
             "{}:{}:{}{}{}",
             self.input_file.filename, self.start_line, self.start_col, msg_prefix, message
-        )
+        );
+
+        #[cfg(not(feature = "std"))]
+        let x = format!(
+            "{}:{}{}{}",
+            self.start_line, self.start_col, msg_prefix, message
+        );
+
+        x
     }
 
     pub fn to_string_with_content(&self, message: &String) -> String {
         let mut string = self.to_string(message);
-        let input_file_path = Path::new(&self.input_file.filename);
-        if let Ok(file) = File::open(input_file_path) {
-            let mut reader = BufReader::new(file);
-            string.push_str(&format!("\n{}", self.get_location_marks(&mut reader)));
+        #[cfg(feature = "std")]
+        {
+            let input_file_path = Path::new(&self.input_file.filename);
+            if let Ok(file) = File::open(input_file_path) {
+                let mut reader = BufReader::new(file);
+                string.push_str(&format!("\n{}", self.get_location_marks(&mut reader)));
+            }
         }
         string
     }
 
+    #[cfg(feature = "std")]
     pub fn get_location_marks(&self, file_contents: &mut impl Read) -> String {
         let mut contents = String::new();
         // If this read fails, the string will be left empty, so we can ignore the result

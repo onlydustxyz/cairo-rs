@@ -97,10 +97,11 @@ pub struct Attribute {
 pub struct Location {
     pub end_line: u32,
     pub end_col: u32,
-    pub input_file: InputFile,
     pub parent_location: Option<(Box<Location>, String)>,
     pub start_line: u32,
     pub start_col: u32,
+    #[cfg(feature = "std")]
+    pub input_file: InputFile,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
@@ -114,6 +115,7 @@ pub struct InstructionLocation {
     pub hints: Vec<HintLocation>,
 }
 
+#[cfg(feature = "std")]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct InputFile {
     pub filename: String,
