@@ -253,16 +253,18 @@ impl Location {
     }
 
     pub fn to_string_with_content(&self, message: &String) -> String {
-        let mut string = self.to_string(message);
         #[cfg(feature = "std")]
         {
+            let mut string = self.to_string(message);
             let input_file_path = Path::new(&self.input_file.filename);
             if let Ok(file) = File::open(input_file_path) {
                 let mut reader = BufReader::new(file);
                 string.push_str(&format!("\n{}", self.get_location_marks(&mut reader)));
             }
+            string
         }
-        string
+        #[cfg(not(feature = "std"))]
+        self.to_string(message)
     }
 
     #[cfg(feature = "std")]
