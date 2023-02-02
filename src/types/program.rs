@@ -2,17 +2,21 @@ use std::prelude::v1::*;
 
 use crate::{
     serde::deserialize_program::{
-        deserialize_and_parse_program, Attribute, HintParams, Identifier, InstructionLocation,
-        ReferenceManager,
+        Attribute, HintParams, Identifier, InstructionLocation, ReferenceManager,
     },
     types::{errors::program_errors::ProgramError, relocatable::MaybeRelocatable},
 };
 use felt::{Felt, PRIME_STR};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+#[cfg(feature = "std")]
+use crate::serde::deserialize_program::deserialize_and_parse_program;
+#[cfg(feature = "std")]
 use std::{
     fs::File,
     io::{BufReader, Read},
-    {collections::HashMap, path::Path},
+    path::Path,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,6 +78,7 @@ impl Program {
         })
     }
 
+    #[cfg(feature = "std")]
     pub fn from_file(path: &Path, entrypoint: Option<&str>) -> Result<Program, ProgramError> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
@@ -81,6 +86,7 @@ impl Program {
         deserialize_and_parse_program(reader, entrypoint)
     }
 
+    #[cfg(feature = "std")]
     pub fn from_reader(
         reader: impl Read,
         entrypoint: Option<&str>,
