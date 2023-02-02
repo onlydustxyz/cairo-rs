@@ -46,7 +46,7 @@ keccak = "0.1.2"
 # https://github.com/Geal/nom/issues/1253
 parse-hyperlinks = { path = "./deps/parse-hyperlinks", version = "0.23.4" }
 felt = { package = "cairo-felt", path = "./felt", version = "0.1.0" }
-no-std-compat = { features = ["alloc", "compat_hash"] }
+no-std-compat = { features = ["alloc", "compat_hash"], version="0.4.1" }
 
 [dev-dependencies]
 iai = "0.1"
