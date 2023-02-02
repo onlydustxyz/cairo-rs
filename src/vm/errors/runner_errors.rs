@@ -5,100 +5,198 @@ use std::collections::HashSet;
 use super::memory_errors::MemoryError;
 use crate::types::relocatable::MaybeRelocatable;
 use felt::Felt;
-use thiserror::Error;
 
-#[derive(Debug, PartialEq, Eq, Error)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RunnerError {
-    #[error("Can't initialize state without an execution base")]
     NoExecBase,
-    #[error("Can't initialize the function entrypoint without an execution base")]
     NoExecBaseForEntrypoint,
-    #[error("Initialization failure: No program base")]
     NoProgBase,
-    #[error("Missing main()")]
     MissingMain,
-    #[error("Uninitialized base for builtin")]
     UninitializedBase,
-    #[error("Base for builtin is not finished")]
     BaseNotFinished,
-    #[error("Failed to write program output")]
     WriteFail,
-    #[error("Found None PC during VM initialization")]
     NoPC,
-    #[error("Found None AP during VM initialization")]
     NoAP,
-    #[error("Found None FP during VM initialization")]
     NoFP,
-    #[error("Memory validation failed during VM initialization: {0}")]
     MemoryValidationError(MemoryError),
-    #[error("Memory loading failed during state initialization: {0}")]
     MemoryInitializationError(MemoryError),
-    #[error("Memory addresses must be relocatable")]
     NonRelocatableAddress,
-    #[error("Runner base mustn't be in a TemporarySegment, segment: {0}")]
     RunnerInTemporarySegment(isize),
-    #[error("Failed to convert string to FieldElement")]
     FailedStringConversion,
-    #[error("Expected integer at address {0:?}")]
     ExpectedInteger(MaybeRelocatable),
-    #[error("Failed to retrieve value from address {0:?}")]
     MemoryGet(MaybeRelocatable),
-    #[error(transparent)]
     FailedMemoryGet(MemoryError),
-    #[error("EcOpBuiltin: m should be at most {0}")]
     EcOpBuiltinScalarLimit(Felt),
-    #[error("Given builtins are not in appropiate order")]
     DisorderedBuiltins,
-    #[error("Expected integer at address {0:?} to be smaller than 2^{1}, Got {2}")]
     IntegerBiggerThanPowerOfTwo(MaybeRelocatable, u32, Felt),
-    #[error("{0}")]
     EcOpSameXCoordinate(String),
-    #[error("EcOpBuiltin: point {0:?} is not on the curve")]
     PointNotOnCurve((Felt, Felt)),
-    #[error("Builtin(s) {0:?} not present in layout {1}")]
     NoBuiltinForInstance(HashSet<String>, String),
-    #[error("Invalid layout {0}")]
     InvalidLayoutName(String),
-    #[error("Run has already ended.")]
     RunAlreadyFinished,
-    #[error("end_run must be called before finalize_segments.")]
     FinalizeNoEndRun,
-    #[error("end_run must be called before read_return_values.")]
     ReadReturnValuesNoEndRun,
-    #[error("Builtin {0} not included.")]
     BuiltinNotIncluded(String),
-    #[error("Builtin segment name collision on '{0}'")]
     BuiltinSegmentNameCollision(&'static str),
-    #[error("Error while finalizing segments: {0}")]
     FinalizeSegements(MemoryError),
-    #[error("finalize_segments called but proof_mode is not enabled")]
     FinalizeSegmentsNoProofMode,
-    #[error("Final stack error")]
     FinalStack,
-    #[error("Invalid stop pointer for {0} ")]
     InvalidStopPointer(String),
-    #[error("Running in proof-mode but no __start__ label found, try compiling with proof-mode")]
     NoProgramStart,
-    #[error("Running in proof-mode but no __end__ label found, try compiling with proof-mode")]
     NoProgramEnd,
-    #[error("Could not convert slice to array")]
     SliceToArrayError,
-    #[error("Missing builtin: {0}")]
     MissingBuiltin(String),
-    #[error("Cannot add the return values to the public memory after segment finalization.")]
     FailedAddingReturnValues,
-    #[error("Missing execution public memory")]
     NoExecPublicMemory,
-    #[error("Coulnd't parse prime from felt lib")]
     CouldntParsePrime,
-    #[error("Could not convert vec with Maybe Relocatables into u64 array")]
     MaybeRelocVecToU64ArrayError,
-    #[error("Expected Maybe Relocatable with Int value but get one with Relocatable")]
     FoundNonInt,
-    #[error("{0} is not divisible by {1}")]
     SafeDivFailUsize(usize, usize),
-    #[error(transparent)]
-    MemoryError(#[from] MemoryError),
-    #[error("Negative builtin base")]
+    MemoryError(MemoryError),
     NegBuiltinBase,
+}
+
+impl std::fmt::Display for RunnerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RunnerError::NoExecBase => "Can't initialize state without an execution base".fmt(f),
+            RunnerError::NoExecBaseForEntrypoint => {
+                "Can't initialize the function entrypoint without an execution base".fmt(f)
+            }
+
+            RunnerError::NoProgBase => "Initialization failure: No program base".fmt(f),
+            RunnerError::MissingMain => "Missing main()".fmt(f),
+
+            RunnerError::UninitializedBase => "Uninitialized base for builtin".fmt(f),
+            RunnerError::BaseNotFinished => "Base for builtin is not finished".fmt(f),
+            RunnerError::WriteFail => "Failed to write program output".fmt(f),
+            RunnerError::NoPC => "Found None PC during VM initialization".fmt(f),
+            RunnerError::NoAP => "Found None AP during VM initialization".fmt(f),
+            RunnerError::NoFP => "Found None FP during VM initialization".fmt(f),
+            RunnerError::MemoryValidationError(e) => {
+                format!("Memory validation failed during VM initialization: {}", e).fmt(f)
+            }
+            RunnerError::MemoryInitializationError(e) => {
+                format!("Memory loading failed during state initialization: {}", e).fmt(f)
+            }
+            RunnerError::NonRelocatableAddress => "Memory addresses must be relocatable".fmt(f),
+            RunnerError::RunnerInTemporarySegment(seg) => format!(
+                "Runner base mustn't be in a TemporarySegment, segment: {}",
+                seg
+            )
+            .fmt(f),
+            RunnerError::FailedStringConversion => {
+                "Failed to convert string to FieldElement".fmt(f)
+            }
+            RunnerError::ExpectedInteger(addr) => {
+                format!("Expected integer at address {:?}", addr).fmt(f)
+            }
+            RunnerError::MemoryGet(addr) => {
+                format!("Failed to retrieve value from address {:?}", addr).fmt(f)
+            }
+            RunnerError::FailedMemoryGet(e) => {
+                format!("Failed to retrieve value from memory: {}", e).fmt(f)
+            }
+            RunnerError::EcOpBuiltinScalarLimit(limit) => {
+                format!("EcOpBuiltin: m should be at most {}", limit).fmt(f)
+            }
+            RunnerError::DisorderedBuiltins => "Given builtins are not in appropiate order".fmt(f),
+            RunnerError::IntegerBiggerThanPowerOfTwo(addr, power, value) => format!(
+                "Expected integer at address {:?} to be smaller than 2^{}, Got {}",
+                addr, power, value
+            )
+            .fmt(f),
+            RunnerError::EcOpSameXCoordinate(msg) => {
+                format!("EcOpBuiltin: point is not on the curve: {}", msg).fmt(f)
+            }
+
+            RunnerError::PointNotOnCurve(point) => {
+                format!("EcOpBuiltin: point {:?} is not on the curve", point).fmt(f)
+            }
+
+            RunnerError::NoBuiltinForInstance(builtins, layout) => {
+                format!("Builtin(s) {:?} not present in layout {}", builtins, layout).fmt(f)
+            }
+
+            RunnerError::InvalidLayoutName(layout) => format!("Invalid layout {}", layout).fmt(f),
+
+            RunnerError::RunAlreadyFinished => "Run has already ended.".fmt(f),
+
+            RunnerError::FinalizeNoEndRun => {
+                "end_run must be called before finalize_segments.".fmt(f)
+            }
+
+            RunnerError::ReadReturnValuesNoEndRun => {
+                "end_run must be called before read_return_values.".fmt(f)
+            }
+
+            RunnerError::BuiltinNotIncluded(builtin) => {
+                format!("Builtin {} not included.", builtin).fmt(f)
+            }
+
+            RunnerError::BuiltinSegmentNameCollision(name) => {
+                format!("Builtin segment name collision on '{}'", name).fmt(f)
+            }
+
+            RunnerError::FinalizeSegements(e) => {
+                format!("Failed to finalize segments: {}", e).fmt(f)
+            }
+
+            RunnerError::FinalizeSegmentsNoProofMode => {
+                "finalize_segments can only be called in proof mode.".fmt(f)
+            }
+
+            RunnerError::FinalStack => "Final stack is not empty.".fmt(f),
+
+            RunnerError::InvalidStopPointer(msg) => format!("Invalid stop pointer: {}", msg).fmt(f),
+
+            RunnerError::NoProgramStart => "No program start.".fmt(f),
+
+            RunnerError::NoProgramEnd => "No program end.".fmt(f),
+
+            RunnerError::SliceToArrayError => "Failed to convert slice to array.".fmt(f),
+
+            RunnerError::MissingBuiltin(builtin) => format!("Missing builtin: {}", builtin).fmt(f),
+
+            RunnerError::FailedAddingReturnValues => {
+                "Failed to add return values to memory.".fmt(f)
+            }
+
+            RunnerError::NoExecPublicMemory => "No public memory in execution mode.".fmt(f),
+
+            RunnerError::CouldntParsePrime => "Could not parse prime.".fmt(f),
+
+            RunnerError::MaybeRelocVecToU64ArrayError => {
+                "Failed to convert relocatable vector to u64 array.".fmt(f)
+            }
+
+            RunnerError::FoundNonInt => "Found non integer.".fmt(f),
+
+            RunnerError::SafeDivFailUsize(a, b) => format!("Safe div failed: {} / {}", a, b).fmt(f),
+
+            RunnerError::MemoryError(e) => format!("Memory error: {}", e).fmt(f),
+
+            RunnerError::NegBuiltinBase => "Neg builtin base.".fmt(f),
+        }
+    }
+}
+
+impl From<MemoryError> for RunnerError {
+    fn from(e: MemoryError) -> Self {
+        RunnerError::MemoryError(e)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for RunnerError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            RunnerError::MemoryValidationError(e) => Some(e),
+            RunnerError::MemoryInitializationError(e) => Some(e),
+            RunnerError::FailedMemoryGet(e) => Some(e),
+            RunnerError::FinalizeSegements(e) => Some(e),
+            RunnerError::MemoryError(e) => Some(e),
+            _ => None,
+        }
+    }
 }
