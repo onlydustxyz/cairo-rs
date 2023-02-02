@@ -37,7 +37,7 @@ pub enum MemoryError {
 }
 
 impl std::fmt::Display for MemoryError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             MemoryError::UnallocatedSegment(v0, v1) => {
                 format!("Can't insert into segment #{v0}; memory only has {v1} segment").fmt(f)
