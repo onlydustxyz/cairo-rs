@@ -7,8 +7,6 @@ use std::{
     path::Path,
 };
 
-use thiserror::Error;
-
 use crate::{
     hint_processor::{
         hint_processor_definition::HintReference,
@@ -20,7 +18,8 @@ use crate::{
 };
 
 use super::vm_errors::VirtualMachineError;
-#[derive(Debug, PartialEq, Error)]
+
+#[derive(Debug, PartialEq)]
 pub struct VmException {
     pub pc: usize,
     pub inst_location: Option<Location>,
@@ -28,6 +27,9 @@ pub struct VmException {
     pub error_attr_value: Option<String>,
     pub traceback: Option<String>,
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for VmException {}
 
 impl VmException {
     pub fn from_vm_error(
