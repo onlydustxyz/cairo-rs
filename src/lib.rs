@@ -2,6 +2,7 @@
 extern crate no_std_compat as std;
 
 #[deny(warnings)]
+#[cfg(feature = "std")]
 pub mod cairo_run;
 pub mod hint_processor;
 pub mod math_utils;
