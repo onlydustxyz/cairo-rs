@@ -320,9 +320,9 @@ mod tests {
     use crate::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
     use crate::types::program::Program;
     use crate::utils::test_utils::*;
-    use crate::vm::errors::cairo_run_errors::CairoRunError;
     use crate::vm::errors::vm_errors::VirtualMachineError;
     use crate::vm::runners::cairo_runner::CairoRunner;
+    use crate::vm::security::verify_secure_runner;
     use crate::vm::{
         errors::{memory_errors::MemoryError, runner_errors::RunnerError},
         runners::builtin_runner::BuiltinRunner,
@@ -1039,22 +1039,32 @@ mod tests {
     #[test]
     fn catch_point_same_x() {
         let program = Path::new("cairo_programs/bad_programs/ec_op_same_x.json");
-        let result = crate::cairo_run::cairo_run(
-            program,
-            "main",
-            false,
-            false,
-            "all",
-            false,
-            None,
-            &mut BuiltinHintProcessor::new_empty(),
-        );
+        let program = match Program::from_file(program, Some("main")) {
+            Ok(program) => program,
+            Err(error) => panic!("Failed to load program: {}", error),
+        };
+
+        let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
+        let mut vm = VirtualMachine::new(false);
+        let end = cairo_runner.initialize(&mut vm).unwrap();
+
+        let hint_executor = &mut BuiltinHintProcessor::new_empty();
+
+        cairo_runner
+            .run_until_pc(end, &mut vm, hint_executor)
+            .unwrap();
+        cairo_runner
+            .end_run(false, false, &mut vm, hint_executor)
+            .unwrap();
+
+        vm.verify_auto_deductions().unwrap();
+        cairo_runner.read_return_values(&mut vm).unwrap();
+        let result = verify_secure_runner(&cairo_runner, true, &mut vm);
+
         assert!(result.is_err());
         // We need to check this way because CairoRunError doens't implement PartialEq
         match result {
-            Err(CairoRunError::VirtualMachine(VirtualMachineError::RunnerError(
-                RunnerError::EcOpSameXCoordinate(_),
-            ))) => {}
+            Err(VirtualMachineError::RunnerError(RunnerError::EcOpSameXCoordinate(_))) => {}
             Err(_) => panic!("Wrong error returned, expected RunnerError::EcOpSameXCoordinate"),
             Ok(_) => panic!("Expected run to fail"),
         }
@@ -1062,23 +1072,35 @@ mod tests {
 
     #[test]
     fn catch_point_not_in_curve() {
-        let program = Path::new("cairo_programs/bad_programs/ec_op_not_in_curve.json");
-        let result = crate::cairo_run::cairo_run(
-            program,
-            "main",
-            false,
-            false,
-            "all",
-            false,
-            None,
-            &mut BuiltinHintProcessor::new_empty(),
-        );
+        let program = Program::from_file(
+            Path::new("cairo_programs/bad_programs/ec_op_not_in_curve.json"),
+            Some("main"),
+        )
+        .unwrap();
+        let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
+        let mut vm = VirtualMachine::new(false);
+        let end = cairo_runner.initialize(&mut vm).unwrap();
+
+        let hint_proccesor = &mut BuiltinHintProcessor::new_empty();
+        cairo_runner
+            .run_until_pc(end, &mut vm, hint_proccesor)
+            .unwrap();
+
+        cairo_runner
+            .end_run(false, false, &mut vm, hint_proccesor)
+            .unwrap();
+
+        vm.verify_auto_deductions().unwrap();
+
+        cairo_runner.read_return_values(&mut vm).unwrap();
+
+        let result = verify_secure_runner(&cairo_runner, true, &mut vm);
+
         assert!(result.is_err());
+
         // We need to check this way because CairoRunError doens't implement PartialEq
         match result {
-            Err(CairoRunError::VirtualMachine(VirtualMachineError::RunnerError(
-                RunnerError::PointNotOnCurve(_),
-            ))) => {}
+            Err(VirtualMachineError::RunnerError(RunnerError::PointNotOnCurve(_))) => {}
             Err(_) => panic!("Wrong error returned, expected RunnerError::EcOpSameXCoordinate"),
             Ok(_) => panic!("Expected run to fail"),
         }
