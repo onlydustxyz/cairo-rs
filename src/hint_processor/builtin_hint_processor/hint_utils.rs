@@ -13,7 +13,12 @@ use crate::types::relocatable::Relocatable;
 use crate::vm::errors::hint_errors::HintError;
 use crate::vm::vm_core::VirtualMachine;
 use std::borrow::Cow;
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 //Inserts value into the address of the given ids variable
 pub fn insert_value_from_var_name(

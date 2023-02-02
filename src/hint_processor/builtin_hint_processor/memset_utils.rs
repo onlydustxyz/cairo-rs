@@ -13,7 +13,13 @@ use crate::{
 };
 use felt::Felt;
 use num_traits::Signed;
-use std::{any::Any, collections::HashMap};
+use std::any::Any;
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 //  Implements hint:
 //  %{ vm_enter_scope({'n': ids.n}) %}

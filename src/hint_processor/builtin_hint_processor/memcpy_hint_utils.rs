@@ -13,7 +13,13 @@ use crate::{
 };
 use felt::Felt;
 use num_traits::{One, Zero};
-use std::{any::Any, collections::HashMap};
+use std::any::Any;
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 //Implements hint: memory[ap] = segments.add()
 pub fn add_segment(vm: &mut VirtualMachine) -> Result<(), HintError> {

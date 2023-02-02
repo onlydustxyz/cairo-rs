@@ -6,11 +6,13 @@ use crate::{
     vm::errors::{memory_errors::MemoryError, vm_errors::VirtualMachineError},
 };
 use felt::Felt;
-use std::{
-    borrow::Cow,
-    collections::{HashMap, HashSet},
-    mem::swap,
-};
+use std::{borrow::Cow, mem::swap};
+
+#[cfg(feature = "std")]
+use std::collections::{HashMap, HashSet};
+
+#[cfg(not(feature = "std"))]
+use hashbrown::{HashMap, HashSet};
 
 pub struct ValidationRule(
     #[allow(clippy::type_complexity)]

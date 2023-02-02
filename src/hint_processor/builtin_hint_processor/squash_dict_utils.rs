@@ -21,7 +21,12 @@ use crate::{
 use felt::Felt;
 use num_integer::Integer;
 use num_traits::{One, ToPrimitive, Zero};
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 fn get_access_indices(
     exec_scopes: &mut ExecutionScopes,

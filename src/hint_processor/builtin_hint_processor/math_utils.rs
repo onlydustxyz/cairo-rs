@@ -24,9 +24,14 @@ use num_traits::One;
 use num_traits::{Num, Signed, Zero};
 use std::{
     any::Any,
-    collections::HashMap,
     ops::{Shl, Shr},
 };
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 //Implements hint: memory[ap] = 0 if 0 <= (ids.a % PRIME) < range_check_builtin.bound else 1
 pub fn is_nn(

@@ -18,10 +18,13 @@ use felt::Felt;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::One;
-use std::{
-    collections::HashMap,
-    ops::{Shl, Shr},
-};
+use std::ops::{Shl, Shr};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 /* Implements hint:
 from starkware.cairo.common.cairo_secp.secp_utils import N, pack

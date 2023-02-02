@@ -16,7 +16,13 @@ use crate::{
     },
 };
 use felt::Felt;
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
+
 /*
 Implements hint:
 %{

@@ -12,8 +12,13 @@ use crate::{
 use felt::Felt;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use std::collections::HashMap;
 use std::ops::Shl;
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 // Constants in package "starkware.cairo.common.cairo_secp.constants".
 pub const BASE_86: &str = "starkware.cairo.common.cairo_secp.constants.BASE";

@@ -18,7 +18,12 @@ use crate::{
 };
 use felt::Felt;
 use num_traits::{Signed, ToPrimitive};
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 pub fn find_element(
     vm: &mut VirtualMachine,

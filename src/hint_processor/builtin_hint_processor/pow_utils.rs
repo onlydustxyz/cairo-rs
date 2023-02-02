@@ -12,7 +12,12 @@ use crate::{
 };
 use felt::Felt;
 use num_integer::Integer;
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 /*
 Implements hint:

@@ -11,7 +11,12 @@ use crate::{
         vm_core::VirtualMachine,
     },
 };
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 pub fn verify_ecdsa_signature(
     vm: &mut VirtualMachine,

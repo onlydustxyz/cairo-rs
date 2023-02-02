@@ -19,7 +19,13 @@ use felt::Felt;
 use num_integer::{div_ceil, Integer};
 use num_traits::ToPrimitive;
 use starknet_crypto::{verify, FieldElement, Signature};
-use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
+use std::{any::Any, cell::RefCell, rc::Rc};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct SignatureBuiltinRunner {
@@ -137,7 +143,7 @@ impl SignatureBuiltinRunner {
                 let pub_key = memory
                     .get_integer(&pubkey_addr)
                     .map_err(|_| MemoryError::FoundNonInt)?;
-                let signatures_map = signatures.borrow();
+                let signatures_map = (*signatures).borrow();
                 let signature = signatures_map
                     .get(&pubkey_addr)
                     .ok_or(MemoryError::SignatureNotFound)?;

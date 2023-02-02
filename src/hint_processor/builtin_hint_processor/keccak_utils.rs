@@ -20,7 +20,13 @@ use crate::{
 use felt::Felt;
 use num_traits::{One, Signed, ToPrimitive};
 use sha3::{Digest, Keccak256};
-use std::{cmp, collections::HashMap, ops::Shl};
+use std::{cmp, ops::Shl};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 /* Implements hint:
    %{

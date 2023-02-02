@@ -41,9 +41,14 @@ use num_integer::div_rem;
 use num_traits::{ToPrimitive, Zero};
 use std::{
     any::Any,
-    collections::{HashMap, HashSet},
     ops::{Add, Sub},
 };
+
+#[cfg(feature = "std")]
+use std::collections::{HashMap, HashSet};
+
+#[cfg(not(feature = "std"))]
+use hashbrown::{HashMap, HashSet};
 
 #[cfg(feature = "std")]
 use std::io;

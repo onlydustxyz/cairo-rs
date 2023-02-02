@@ -13,10 +13,14 @@ use crate::{
 use felt::Felt;
 use num_integer::div_rem;
 use num_traits::{One, Signed, Zero};
-use std::{
-    collections::HashMap,
-    ops::{Shl, Shr},
-};
+use std::ops::{Shl, Shr};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
+
 /*
 Implements hint:
 %{

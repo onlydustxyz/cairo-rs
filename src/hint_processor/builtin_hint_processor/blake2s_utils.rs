@@ -18,7 +18,13 @@ use crate::{
 };
 use felt::Felt;
 use num_traits::ToPrimitive;
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 fn get_fixed_size_u32_array<const T: usize>(
     h_range: &Vec<Cow<Felt>>,

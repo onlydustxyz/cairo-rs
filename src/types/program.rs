@@ -8,7 +8,12 @@ use crate::{
 };
 use felt::{Felt, PRIME_STR};
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 #[cfg(feature = "std")]
 use crate::serde::deserialize_program::deserialize_and_parse_program;

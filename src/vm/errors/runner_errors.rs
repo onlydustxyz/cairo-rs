@@ -1,6 +1,10 @@
 use std::prelude::v1::*;
 
+#[cfg(feature = "std")]
 use std::collections::HashSet;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashSet;
 
 use super::memory_errors::MemoryError;
 use crate::types::relocatable::MaybeRelocatable;

@@ -9,11 +9,13 @@ use crate::{
         vm_memory::memory::Memory,
     },
 };
-use std::{
-    any::Any,
-    cmp,
-    collections::{HashMap, HashSet},
-};
+use std::{any::Any, cmp};
+
+#[cfg(feature = "std")]
+use std::collections::{HashMap, HashSet};
+
+#[cfg(not(feature = "std"))]
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct MemorySegmentManager {

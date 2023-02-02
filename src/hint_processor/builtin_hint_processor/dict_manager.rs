@@ -1,4 +1,8 @@
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 use crate::{
     types::relocatable::{MaybeRelocatable, Relocatable},

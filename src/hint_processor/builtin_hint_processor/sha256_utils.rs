@@ -16,7 +16,12 @@ use felt::Felt;
 use generic_array::GenericArray;
 use num_traits::{One, Zero};
 use sha2::compress256;
+
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 use crate::hint_processor::hint_processor_definition::HintReference;
 

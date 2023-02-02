@@ -5,7 +5,13 @@ use crate::{
     hint_processor::builtin_hint_processor::dict_manager::DictManager,
     vm::errors::{exec_scope_errors::ExecScopeError, hint_errors::HintError},
 };
-use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
+use std::{any::Any, cell::RefCell, rc::Rc};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 pub struct ExecutionScopes {
     pub data: Vec<HashMap<String, Box<dyn Any>>>,

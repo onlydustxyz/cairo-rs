@@ -24,7 +24,13 @@ use crate::{
 };
 use felt::Felt;
 use num_traits::{ToPrimitive, Zero};
-use std::{any::Any, borrow::Cow, collections::HashMap, ops::Add};
+use std::{any::Any, borrow::Cow, ops::Add};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 const MAX_TRACEBACK_ENTRIES: u32 = 20;
 

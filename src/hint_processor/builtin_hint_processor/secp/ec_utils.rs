@@ -19,10 +19,13 @@ use felt::Felt;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, Zero};
-use std::{
-    collections::HashMap,
-    ops::{BitAnd, Shl},
-};
+use std::ops::{BitAnd, Shl};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 /*
 Implements hint:

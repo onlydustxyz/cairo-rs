@@ -12,8 +12,15 @@ use crate::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use felt::Felt;
+use lazy_static::__Deref;
 use num_traits::{ToPrimitive, Zero};
-use std::{any::Any, collections::HashMap};
+use std::any::Any;
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 pub fn usort_enter_scope(exec_scopes: &mut ExecutionScopes) -> Result<(), HintError> {
     if let Ok(usort_max_size) = exec_scopes.get::<Felt>("usort_max_size") {
@@ -101,7 +108,7 @@ pub fn verify_usort(
     let value = get_integer_from_var_name("value", vm, ids_data, ap_tracking)?.clone();
     let mut positions = exec_scopes
         .get_mut_dict_ref::<Felt, Vec<u64>>("positions_dict")?
-        .remove(&value)
+        .remove(value.deref())
         .ok_or(HintError::UnexpectedPositionsDictFail)?;
     positions.reverse();
     exec_scopes.insert_value("positions", positions);

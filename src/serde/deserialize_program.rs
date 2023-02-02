@@ -11,7 +11,13 @@ use felt::{Felt, PRIME_STR};
 use num_traits::Num;
 use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer, Serialize};
 use serde_json::Number;
-use std::{collections::HashMap, fmt};
+use std::fmt;
+
+#[cfg(feature = "std")]
+use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 #[cfg(feature = "std")]
 use std::io::Read;
