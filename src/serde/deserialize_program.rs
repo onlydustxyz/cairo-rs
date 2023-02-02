@@ -11,7 +11,10 @@ use felt::{Felt, PRIME_STR};
 use num_traits::Num;
 use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer, Serialize};
 use serde_json::Number;
-use std::{collections::HashMap, fmt, io::Read};
+use std::{collections::HashMap, fmt};
+
+#[cfg(feature = "std")]
+use std::io::Read;
 
 #[derive(Deserialize, Debug)]
 pub struct ProgramJson {
@@ -300,17 +303,10 @@ pub fn deserialize_value_address<'de, D: Deserializer<'de>>(
     d.deserialize_str(ValueAddressVisitor)
 }
 
-pub fn deserialize_program_json(reader: impl Read) -> Result<ProgramJson, ProgramError> {
-    let program_json = serde_json::from_reader(reader)?;
-    Ok(program_json)
-}
-
-pub fn deserialize_program(
-    reader: impl Read,
+pub fn parse_program_json(
+    program_json: ProgramJson,
     entrypoint: Option<&str>,
 ) -> Result<Program, ProgramError> {
-    let program_json: ProgramJson = deserialize_program_json(reader)?;
-
     if PRIME_STR != program_json.prime {
         return Err(ProgramError::PrimeDiffers(program_json.prime));
     }
@@ -368,6 +364,21 @@ pub fn deserialize_program(
             .debug_info
             .map(|debug_info| debug_info.instruction_locations),
     })
+}
+
+#[cfg(feature = "std")]
+pub fn deserialize_program_json(reader: impl Read) -> Result<ProgramJson, ProgramError> {
+    let program_json = serde_json::from_reader(reader)?;
+    Ok(program_json)
+}
+
+#[cfg(feature = "std")]
+pub fn deserialize_and_parse_program(
+    reader: impl Read,
+    entrypoint: Option<&str>,
+) -> Result<Program, ProgramError> {
+    let program_json: ProgramJson = deserialize_program_json(reader)?;
+    parse_program_json(program_json, entrypoint)
 }
 
 #[cfg(test)]
@@ -705,7 +716,8 @@ mod tests {
             File::open("cairo_programs/manually_compiled/valid_program_a.json").unwrap();
         let reader = BufReader::new(even_length_file);
 
-        let deserialization_result = deserialize_program(reader, Some("missing_function"));
+        let deserialization_result =
+            deserialize_and_parse_program(reader, Some("missing_function"));
         assert!(deserialization_result.is_err());
         assert!(matches!(
             deserialization_result,
@@ -719,8 +731,8 @@ mod tests {
             File::open("cairo_programs/manually_compiled/valid_program_a.json").unwrap();
         let reader = BufReader::new(even_length_file);
 
-        let program: Program =
-            deserialize_program(reader, Some("main")).expect("Failed to deserialize program");
+        let program: Program = deserialize_and_parse_program(reader, Some("main"))
+            .expect("Failed to deserialize program");
 
         let builtins: Vec<String> = Vec::new();
         let data: Vec<MaybeRelocatable> = vec![
@@ -783,7 +795,7 @@ mod tests {
         let reader = BufReader::new(even_length_file);
 
         let program: Program =
-            deserialize_program(reader, None).expect("Failed to deserialize program");
+            deserialize_and_parse_program(reader, None).expect("Failed to deserialize program");
 
         let builtins: Vec<String> = Vec::new();
         let data: Vec<MaybeRelocatable> = vec![

@@ -2,7 +2,7 @@ use std::prelude::v1::*;
 
 use crate::{
     serde::deserialize_program::{
-        deserialize_program, Attribute, HintParams, Identifier, InstructionLocation,
+        deserialize_and_parse_program, Attribute, HintParams, Identifier, InstructionLocation,
         ReferenceManager,
     },
     types::{errors::program_errors::ProgramError, relocatable::MaybeRelocatable},
@@ -78,14 +78,14 @@ impl Program {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
 
-        deserialize_program(reader, entrypoint)
+        deserialize_and_parse_program(reader, entrypoint)
     }
 
     pub fn from_reader(
         reader: impl Read,
         entrypoint: Option<&str>,
     ) -> Result<Program, ProgramError> {
-        deserialize_program(reader, entrypoint)
+        deserialize_and_parse_program(reader, entrypoint)
     }
 }
 
