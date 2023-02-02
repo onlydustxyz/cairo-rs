@@ -42,9 +42,11 @@ use num_traits::{ToPrimitive, Zero};
 use std::{
     any::Any,
     collections::{HashMap, HashSet},
-    io,
     ops::{Add, Sub},
 };
+
+#[cfg(feature = "std")]
+use std::io;
 
 use super::builtin_runner::KeccakBuiltinRunner;
 
@@ -871,7 +873,8 @@ impl CairoRunner {
     pub fn write_output(
         &mut self,
         vm: &mut VirtualMachine,
-        stdout: &mut dyn io::Write,
+        #[cfg(feature = "std")] dest: &mut dyn io::Write,
+        #[cfg(not(feature = "std"))] dest: &mut Vec<u8>,
     ) -> Result<(), RunnerError> {
         let builtin = vm
             .builtin_runners
@@ -898,7 +901,7 @@ impl CairoRunner {
                 .get_integer(&(base, i).into())
                 .map_err(|_| RunnerError::MemoryGet((base, i).into()))?
                 .to_bigint();
-            writeln!(stdout, "{}", value).map_err(|_| RunnerError::WriteFail)?;
+            writeln!(dest, "{}", value).map_err(|_| RunnerError::WriteFail)?;
         }
 
         Ok(())
