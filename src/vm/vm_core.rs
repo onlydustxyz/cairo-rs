@@ -1018,10 +1018,9 @@ mod tests {
                 bitwise_instance_def::BitwiseInstanceDef, ec_op_instance_def::EcOpInstanceDef,
             },
             instruction::{Op1Addr, Register},
-            program::Program,
             relocatable::Relocatable,
         },
-        utils::test_utils::*,
+        utils::{load_program, test_utils::*},
         vm::{
             errors::memory_errors::MemoryError,
             runners::{
@@ -1032,7 +1031,10 @@ mod tests {
     };
 
     use felt::felt_str;
-    use std::{collections::HashSet, path::Path};
+    #[cfg(not(feature = "std"))]
+    use hashbrown::HashSet;
+    #[cfg(feature = "std")]
+    use std::collections::HashSet;
 
     #[test]
     fn get_instruction_encoding_successful_without_imm() {
@@ -3909,7 +3911,10 @@ mod tests {
     #[test]
     fn get_traceback_entries_bad_dict_update() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/bad_dict_update.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../cairo_programs/bad_programs/bad_dict_update.json"),
             Some("main"),
         );
 
