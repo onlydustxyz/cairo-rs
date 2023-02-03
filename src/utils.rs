@@ -59,6 +59,7 @@ pub fn to_field_element(num: Felt, prime: Felt) -> Felt {
 pub mod test_utils {
     use crate::types::exec_scope::ExecutionScopes;
     use crate::types::relocatable::MaybeRelocatable;
+    use std::prelude::v1::*;
 
     #[macro_export]
     macro_rules! bigint {
@@ -315,7 +316,7 @@ pub mod test_utils {
 
     macro_rules! trace_check {
         ( $trace: expr, [ $( (($si_pc:expr, $off_pc:expr), ($si_ap:expr, $off_ap:expr), ($si_fp:expr, $off_fp:expr)) ),+ ] ) => {
-            let mut index = -1;
+            let mut index = -1isize;
             $(
                 index += 1;
                 assert_eq!(
@@ -509,6 +510,18 @@ pub mod test_utils {
     ) {
         let scope_value = scopes.get_any_boxed_ref(name).unwrap();
         assert_eq!(scope_value.downcast_ref::<T>(), Some(&value));
+    }
+
+    #[cfg(not(feature = "std"))]
+    pub fn get_program_from_file(
+        path: &str,
+        entrypoint: Option<&str>,
+    ) -> crate::types::program::Program {
+        let compiled_program_content = include_str!(path);
+        let program_json: ProgramJson = serde_json::from_str(compiled_program_content)
+            .expect("File content should be deserializable into a ProgramJson");
+        crate::serde::deserialize_program::parse_program_json(program_json, entrypoint)
+            .expect("Invalid Program")
     }
 }
 

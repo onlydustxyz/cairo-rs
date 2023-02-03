@@ -11,11 +11,10 @@ use std::path::Path;
 #[cfg(feature = "skip_next_instruction_hint")]
 #[test]
 fn skip_next_instruction_test() {
-    let program = Program::from_file(
-        Path::new("cairo_programs/noretrocompat/test_skip_next_instruction.noretrocompat.json"),
+    let program = load_program(
+        "cairo_programs/noretrocompat/test_skip_next_instruction.noretrocompat.json",
         Some("main"),
-    )
-    .expect("Failed to deserialize program");
+    );
 
     let mut hint_processor = BuiltinHintProcessor::new_empty();
 
@@ -26,4 +25,20 @@ fn skip_next_instruction_test() {
         cairo_runner.run_until_pc(end, &mut vm, &mut hint_processor),
         Ok(())
     );
+}
+
+fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+    #[cfg(feature = "std")]
+    let program = Program::from_file(Path::new(path), entrypoint)
+        .expect("Call to `Program::from_file()` failed.");
+
+    #[cfg(not(feature = "std"))]
+    let program = {
+        use serde::deserialize_program::{
+            deserialize_program_json, parse_program_json, ProgramJson,
+        };
+        get_program_from_file(&format!("../{path}"), entrypoint)
+    };
+
+    program
 }

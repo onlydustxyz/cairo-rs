@@ -253,24 +253,29 @@ impl Location {
     }
 
     pub fn to_string_with_content(&self, message: &String) -> String {
-        #[cfg(feature = "std")]
-        {
-            let mut string = self.to_string(message);
-            let input_file_path = Path::new(&self.input_file.filename);
-            if let Ok(file) = File::open(input_file_path) {
-                let mut reader = BufReader::new(file);
-                string.push_str(&format!("\n{}", self.get_location_marks(&mut reader)));
-            }
-            string
+        let mut string = self.to_string(message);
+        let input_file_path = Path::new(&self.input_file.filename);
+        if let Ok(file) = File::open(input_file_path) {
+            #[cfg(feature = "std")]
+            let mut reader = BufReader::new(file);
+            string.push_str(&format!(
+                "\n{}",
+                self.get_location_marks(
+                    #[cfg(feature = "std")]
+                    &mut reader
+                )
+            ));
         }
-        #[cfg(not(feature = "std"))]
-        self.to_string(message)
+        string
     }
 
-    #[cfg(feature = "std")]
-    pub fn get_location_marks(&self, file_contents: &mut impl Read) -> String {
+    pub fn get_location_marks(
+        &self,
+        #[cfg(feature = "std")] file_contents: &mut impl Read,
+    ) -> String {
         let mut contents = String::new();
         // If this read fails, the string will be left empty, so we can ignore the result
+        #[cfg(feature = "std")]
         let _ = file_contents.read_to_string(&mut contents);
         let split_lines: Vec<&str> = contents.split('\n').collect();
         if !(0 < self.start_line && ((self.start_line - 1) as usize) < split_lines.len()) {
@@ -619,11 +624,10 @@ mod test {
 
     #[test]
     fn get_traceback_bad_dict_update() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/bad_dict_update.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/bad_dict_update.json",
             Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        );
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -639,11 +643,7 @@ mod test {
 
     #[test]
     fn get_traceback_bad_usort() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/bad_usort.json"),
-            Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        let program = load_program("cairo_programs/bad_programs/bad_usort.json", Some("main"));
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -749,8 +749,13 @@ mod test {
             start_line: 5,
             start_col: 1,
         };
-        let mut reader: &[u8] = &[];
-        assert_eq!(location.get_location_marks(&mut reader), String::from(""))
+        #[cfg(feature = "std")]
+        {
+            let mut reader: &[u8] = &[];
+            assert_eq!(location.get_location_marks(&mut reader), String::from(""));
+        }
+        #[cfg(not(feature = "std"))]
+        assert_eq!(location.get_location_marks(), String::from(""));
     }
 
     #[test]
@@ -774,11 +779,10 @@ cairo_programs/bad_programs/bad_range_check.cairo:11:5: (pc=0:6)
     check_range(num - 1);
     ^******************^
 "#;
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/bad_range_check.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/bad_range_check.json",
             Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        );
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -809,11 +813,7 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
     verify_multiplicity(multiplicity=multiplicity, input_len=input_len, input=input, value=value);
     ^*******************************************************************************************^
 "#;
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/bad_usort.json"),
-            Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        let program = load_program("cairo_programs/bad_programs/bad_usort.json", Some("main"));
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -829,11 +829,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
 
     #[test]
     fn get_value_from_simple_reference_ap_based() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/error_msg_attr_tempvar.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/error_msg_attr_tempvar.json",
             Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        );
         // This program uses a tempvar inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
@@ -847,11 +846,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
 
     #[test]
     fn substitute_error_message_references_ap_based() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/error_msg_attr_tempvar.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/error_msg_attr_tempvar.json",
             Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        );
         // This program uses a tempvar inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
@@ -868,11 +866,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
 
     #[test]
     fn get_value_from_simple_reference_complex() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/error_msg_attr_struct.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/error_msg_attr_struct.json",
             Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        );
         // This program uses a struct inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
@@ -886,11 +883,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
 
     #[test]
     fn substitute_error_message_references_complex() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/error_msg_attr_struct.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/error_msg_attr_struct.json",
             Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        );
         // This program uses a struct inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
@@ -903,5 +899,21 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
                 attribute.value
             )
         );
+    }
+
+    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+        #[cfg(feature = "std")]
+        let program = Program::from_file(Path::new(path), entrypoint)
+            .expect("Call to `Program::from_file()` failed.");
+
+        #[cfg(not(feature = "std"))]
+        let program = {
+            use serde::deserialize_program::{
+                deserialize_program_json, parse_program_json, ProgramJson,
+            };
+            get_program_from_file(&format!("../../{path}"), entrypoint)
+        };
+
+        program
     }
 }

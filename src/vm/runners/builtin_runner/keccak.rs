@@ -387,8 +387,7 @@ mod tests {
         let mut vm = vm!();
 
         vm.segments.segment_used_sizes = Some(vec![0]);
-        let program =
-            Program::from_file(Path::new("cairo_programs/_keccak.json"), Some("main")).unwrap();
+        let program = load_program("cairo_programs/_keccak.json", Some("main"));
 
         let mut cairo_runner = cairo_runner!(program, "recursive");
 
@@ -703,5 +702,21 @@ mod tests {
         let result: usize = builtin.get_used_diluted_check_units(16);
 
         assert_eq!(result, 16384);
+    }
+
+    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+        #[cfg(feature = "std")]
+        let program = Program::from_file(Path::new(path), entrypoint)
+            .expect("Call to `Program::from_file()` failed.");
+
+        #[cfg(not(feature = "std"))]
+        let program = {
+            use serde::deserialize_program::{
+                deserialize_program_json, parse_program_json, ProgramJson,
+            };
+            get_program_from_file(&format!("../../../{path}"), entrypoint)
+        };
+
+        program
     }
 }
