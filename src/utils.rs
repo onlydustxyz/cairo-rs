@@ -518,8 +518,9 @@ pub mod test_utils {
         entrypoint: Option<&str>,
     ) -> crate::types::program::Program {
         let compiled_program_content = include_str!(path);
-        let program_json: ProgramJson = serde_json::from_str(compiled_program_content)
-            .expect("File content should be deserializable into a ProgramJson");
+        let program_json: crate::serde::deserialize_program::ProgramJson =
+            serde_json::from_str(compiled_program_content)
+                .expect("File content should be deserializable into a ProgramJson");
         crate::serde::deserialize_program::parse_program_json(program_json, entrypoint)
             .expect("Invalid Program")
     }
