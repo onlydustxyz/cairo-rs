@@ -33,12 +33,7 @@ fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
         .expect("Call to `Program::from_file()` failed.");
 
     #[cfg(not(feature = "std"))]
-    let program = {
-        use serde::deserialize_program::{
-            deserialize_program_json, parse_program_json, ProgramJson,
-        };
-        get_program_from_file(&format!("../{path}"), entrypoint)
-    };
+    let program = { get_program_from_file(&format!("../{path}"), entrypoint) };
 
     program
 }
