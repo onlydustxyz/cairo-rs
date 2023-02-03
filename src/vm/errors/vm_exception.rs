@@ -311,7 +311,7 @@ mod test {
     use crate::serde::deserialize_program::{Attribute, HintLocation, InstructionLocation};
     use crate::types::program::Program;
     use crate::types::relocatable::Relocatable;
-    use crate::utils::test_utils::*;
+    use crate::utils::{load_program, test_utils::*};
     #[cfg(not(feature = "std"))]
     use hashbrown::HashMap;
     #[cfg(feature = "std")]
@@ -640,7 +640,10 @@ mod test {
     #[test]
     fn get_traceback_bad_dict_update() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/bad_dict_update.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/bad_dict_update.json"),
             Some("main"),
         );
 
@@ -658,8 +661,13 @@ mod test {
 
     #[test]
     fn get_traceback_bad_usort() {
-        let program = load_program("cairo_programs/bad_programs/bad_usort.json", Some("main"));
-
+        let program = load_program(
+            #[cfg(feature = "std")]
+            "cairo_programs/bad_programs/bad_usort.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/bad_usort.json"),
+            Some("main"),
+        );
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
         let mut vm = vm!();
@@ -810,7 +818,10 @@ cairo_programs/bad_programs/bad_range_check.cairo:11:5: (pc=0:6)
     ^******************^
 "#;
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/bad_range_check.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/bad_range_check.json"),
             Some("main"),
         );
 
@@ -843,7 +854,13 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
     verify_multiplicity(multiplicity=multiplicity, input_len=input_len, input=input, value=value);
     ^*******************************************************************************************^
 "#;
-        let program = load_program("cairo_programs/bad_programs/bad_usort.json", Some("main"));
+        let program = load_program(
+            #[cfg(feature = "std")]
+            "cairo_programs/bad_programs/bad_usort.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/bad_usort.json"),
+            Some("main"),
+        );
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -860,7 +877,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
     #[test]
     fn get_value_from_simple_reference_ap_based() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/error_msg_attr_tempvar.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/error_msg_attr_tempvar.json"),
             Some("main"),
         );
         // This program uses a tempvar inside an error attribute
@@ -877,7 +897,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
     #[test]
     fn substitute_error_message_references_ap_based() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/error_msg_attr_tempvar.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/error_msg_attr_tempvar.json"),
             Some("main"),
         );
         // This program uses a tempvar inside an error attribute
@@ -897,7 +920,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
     #[test]
     fn get_value_from_simple_reference_complex() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/error_msg_attr_struct.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/error_msg_attr_struct.json"),
             Some("main"),
         );
         // This program uses a struct inside an error attribute
@@ -914,7 +940,10 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
     #[test]
     fn substitute_error_message_references_complex() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/error_msg_attr_struct.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../cairo_programs/bad_programs/error_msg_attr_struct.json"),
             Some("main"),
         );
         // This program uses a struct inside an error attribute
