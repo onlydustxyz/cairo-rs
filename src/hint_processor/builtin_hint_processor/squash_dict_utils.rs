@@ -769,14 +769,13 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         //Execute the hint
         assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        let map: HashMap<Felt, Vec<Felt>> =
+            HashMap::from([(Felt::one(), vec![Felt::zero(), Felt::one()])]);
         //Check scope variables
         check_scope!(
             &exec_scopes,
             [
-                (
-                    "access_indices",
-                    HashMap::from([(Felt::one(), vec![Felt::zero(), Felt::one()])])
-                ),
+                ("access_indices", map),
                 ("keys", Vec::<Felt>::new()),
                 ("key", Felt::one())
             ]
@@ -822,17 +821,15 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         //Execute the hint
         assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        let map: HashMap<Felt, Vec<Felt>> = HashMap::from([
+            (Felt::one(), vec![Felt::zero(), Felt::one()]),
+            (Felt::new(2), vec![Felt::new(2), Felt::new(3)]),
+        ]);
         //Check scope variables
         check_scope!(
             &exec_scopes,
             [
-                (
-                    "access_indices",
-                    HashMap::from([
-                        (Felt::one(), vec![Felt::zero(), Felt::one()]),
-                        (Felt::new(2), vec![Felt::new(2), Felt::new(3)])
-                    ])
-                ),
+                ("access_indices", map),
                 ("keys", vec![Felt::new(2)]),
                 ("key", Felt::one())
             ]
@@ -875,14 +872,13 @@ mod tests {
         ];
         //Execute the hint
         assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        let map: HashMap<Felt, Vec<Felt>> =
+            HashMap::from([(Felt::one(), vec![Felt::zero(), Felt::one()])]);
         //Check scope variables
         check_scope!(
             &exec_scopes,
             [
-                (
-                    "access_indices",
-                    HashMap::from([(Felt::one(), vec![Felt::zero(), Felt::one()])])
-                ),
+                ("access_indices", map),
                 ("keys", Vec::<Felt>::new()),
                 ("key", Felt::one())
             ]
@@ -1051,11 +1047,14 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         //Execute the hint
         assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        let map: HashMap<Felt, Vec<Felt>> = HashMap::from([(
+            felt_str!(
+                "3618502761706184546546682988428055018603476541694452277432519575032261771265"
+            ),
+            vec![Felt::zero(), Felt::one()],
+        )]);
         //Check scope variables
-        check_scope!(&exec_scopes, [("access_indices", HashMap::from([(
-           felt_str!("3618502761706184546546682988428055018603476541694452277432519575032261771265"),
-            vec![Felt::zero(), Felt::one()]
-        )])), ("keys", Vec::<Felt>::new()), ("key", felt_str!("3618502761706184546546682988428055018603476541694452277432519575032261771265"))]);
+        check_scope!(&exec_scopes, [("access_indices", map), ("keys", Vec::<Felt>::new()), ("key", felt_str!("3618502761706184546546682988428055018603476541694452277432519575032261771265"))]);
         //Check ids variables
         check_memory![
             vm.memory,
