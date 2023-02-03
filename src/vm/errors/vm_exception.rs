@@ -666,7 +666,11 @@ mod test {
         assert!(cairo_runner
             .run_until_pc(end, &mut vm, &mut hint_processor)
             .is_err());
+        #[cfg(feature = "std")]
         let expected_traceback = String::from("Cairo traceback (most recent call last):\ncairo_programs/bad_programs/bad_dict_update.cairo:10:5: (pc=0:34)\n    dict_update{dict_ptr=my_dict}(key=2, prev_value=3, new_value=4);\n    ^*************************************************************^\n");
+        #[cfg(not(feature = "std"))]
+        let expected_traceback =
+            String::from("Cairo traceback (most recent call last):\ncairo_programs/bad_programs/bad_dict_update.cairo:10:5: (pc=0:34)\n");
         assert_eq!(get_traceback(&vm, &cairo_runner), Some(expected_traceback));
     }
 
@@ -688,7 +692,11 @@ mod test {
         assert!(cairo_runner
             .run_until_pc(end, &mut vm, &mut hint_processor)
             .is_err());
+        #[cfg(feature = "std")]
         let expected_traceback = String::from("Cairo traceback (most recent call last):\ncairo_programs/bad_programs/bad_usort.cairo:91:48: (pc=0:97)\n    let (output_len, output, multiplicities) = usort(input_len=3, input=input_array);\n                                               ^***********************************^\ncairo_programs/bad_programs/bad_usort.cairo:36:5: (pc=0:30)\n    verify_usort{output=output}(\n    ^**************************^\ncairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)\n    verify_multiplicity(multiplicity=multiplicity, input_len=input_len, input=input, value=value);\n    ^*******************************************************************************************^\n");
+        #[cfg(not(feature = "std"))]
+        let expected_traceback =
+            String::from("Cairo traceback (most recent call last):\ncairo_programs/bad_programs/bad_usort.cairo:91:48: (pc=0:97)\ncairo_programs/bad_programs/bad_usort.cairo:36:5: (pc=0:30)\ncairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)\n");
         assert_eq!(get_traceback(&vm, &cairo_runner), Some(expected_traceback));
     }
 
