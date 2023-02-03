@@ -254,18 +254,22 @@ impl Location {
 
     pub fn to_string_with_content(&self, message: &String) -> String {
         let mut string = self.to_string(message);
-        let input_file_path = Path::new(&self.input_file.filename);
-        if let Ok(file) = File::open(input_file_path) {
-            #[cfg(feature = "std")]
-            let mut reader = BufReader::new(file);
-            string.push_str(&format!(
-                "\n{}",
-                self.get_location_marks(
-                    #[cfg(feature = "std")]
-                    &mut reader
-                )
-            ));
+        #[cfg(feature = "std")]
+        {
+            let input_file_path = Path::new(&self.input_file.filename);
+            if let Ok(file) = File::open(input_file_path) {
+                let mut reader = BufReader::new(file);
+                string.push_str(&format!(
+                    "\n{}",
+                    self.get_location_marks(
+                        #[cfg(feature = "std")]
+                        &mut reader
+                    )
+                ));
+            }
         }
+        #[cfg(not(feature = "std"))]
+        string.push_str(&format!("\n{}", self.get_location_marks()));
         string
     }
 
@@ -301,16 +305,17 @@ impl Location {
 }
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-    use std::path::Path;
-
     use crate::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
-    use crate::serde::deserialize_program::{
-        Attribute, HintLocation, InputFile, InstructionLocation,
-    };
+    #[cfg(feature = "std")]
+    use crate::serde::deserialize_program::InputFile;
+    use crate::serde::deserialize_program::{Attribute, HintLocation, InstructionLocation};
     use crate::types::program::Program;
     use crate::types::relocatable::Relocatable;
     use crate::utils::test_utils::*;
+    #[cfg(not(feature = "std"))]
+    use hashbrown::HashMap;
+    #[cfg(feature = "std")]
+    use std::{collections::HashMap, path::Path};
 
     use super::*;
     #[test]
@@ -319,6 +324,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -351,6 +357,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -370,6 +377,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -437,6 +445,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -471,6 +480,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -478,6 +488,7 @@ mod test {
                 Box::new(Location {
                     end_line: 3,
                     end_col: 3,
+                    #[cfg(feature = "std")]
                     input_file: InputFile {
                         filename: String::from("Folder/file_b.cairo"),
                     },
@@ -547,6 +558,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -569,6 +581,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -591,6 +604,7 @@ mod test {
         let location_a = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file_a.cairo"),
             },
@@ -601,6 +615,7 @@ mod test {
         let location_b = Location {
             end_line: 3,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file_b.cairo"),
             },
@@ -662,6 +677,7 @@ mod test {
         let location = Location {
             end_line: 2,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("Folder/file.cairo"),
             },
@@ -681,6 +697,7 @@ mod test {
         let location = Location {
             end_line: 5,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("cairo_programs/bad_programs/bad_usort.cairo"),
             },
@@ -700,6 +717,7 @@ mod test {
         let location = Location {
             end_line: 5,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("cairo_programs/bad_prtypoograms/bad_usort.cairo"),
             },
@@ -721,6 +739,7 @@ mod test {
         let location = Location {
             end_line: 5,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("cairo_programs/bad_programs/bad_usort.cairo"),
             },
@@ -728,13 +747,23 @@ mod test {
             start_line: 5,
             start_col: 1,
         };
-        let input_file_path = Path::new(&location.input_file.filename);
-        let file = File::open(input_file_path).expect("Failed to open file");
-        let mut reader = BufReader::new(file);
-        assert_eq!(
-            location.get_location_marks(&mut reader),
-            String::from("func usort{range_check_ptr}(input_len: felt, input: felt*) -> (\n^")
-        )
+        #[cfg(feature = "std")]
+        {
+            let input_file_path = Path::new(&location.input_file.filename);
+            let file = File::open(input_file_path).expect("Failed to open file");
+            let mut reader = BufReader::new(file);
+            assert_eq!(
+                location.get_location_marks(&mut reader),
+                String::from("func usort{range_check_ptr}(input_len: felt, input: felt*) -> (\n^")
+            )
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            assert_eq!(
+                location.get_location_marks(),
+                String::from("func usort{range_check_ptr}(input_len: felt, input: felt*) -> (\n^")
+            )
+        }
     }
 
     #[test]
@@ -742,6 +771,7 @@ mod test {
         let location = Location {
             end_line: 5,
             end_col: 2,
+            #[cfg(feature = "std")]
             input_file: InputFile {
                 filename: String::from("cairo_programs/bad_programs/bad_usort.cairo"),
             },
