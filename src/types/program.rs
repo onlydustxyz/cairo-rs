@@ -541,21 +541,4 @@ mod tests {
 
         assert_eq!(program, Program::default())
     }
-
-    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
-        #[cfg(feature = "std")]
-        let program = Program::from_file(Path::new(path), entrypoint)
-            .expect("Call to `Program::from_file()` failed.");
-
-        #[cfg(not(feature = "std"))]
-        let program = {
-            use crate::utils::test_utils::get_program_from_file;
-            use serde::deserialize_program::{
-                deserialize_program_json, parse_program_json, ProgramJson,
-            };
-            get_program_from_file(&format!("../../{path}"), entrypoint)
-        };
-
-        program
-    }
 }
