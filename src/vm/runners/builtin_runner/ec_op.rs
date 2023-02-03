@@ -329,7 +329,6 @@ mod tests {
         vm_core::VirtualMachine,
     };
     use felt::felt_str;
-    use std::path::Path;
     use EcOpBuiltinRunner;
 
     #[test]
@@ -1044,7 +1043,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../../cairo_programs/bad_programs/ec_op_same_x.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
         let mut vm = VirtualMachine::new(false);
@@ -1080,7 +1080,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../../cairo_programs/bad_programs/ec_op_not_in_curve.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
         let mut vm = VirtualMachine::new(false);

@@ -270,7 +270,6 @@ mod tests {
         runners::builtin_runner::BuiltinRunner,
         vm_core::VirtualMachine,
     };
-    use std::path::Path;
 
     #[test]
     fn get_used_instances() {
@@ -393,7 +392,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../../cairo_programs/_keccak.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut cairo_runner = cairo_runner!(program, "recursive");
 

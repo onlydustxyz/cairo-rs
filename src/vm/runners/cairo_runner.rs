@@ -1248,10 +1248,7 @@ mod tests {
     };
     use felt::felt_str;
     use num_traits::One;
-    use std::{
-        collections::{HashMap, HashSet},
-        path::Path,
-    };
+    use std::collections::{HashMap, HashSet};
 
     #[test]
     fn check_memory_usage_ok_case() {
@@ -1550,7 +1547,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/fibonacci.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut cairo_runner = cairo_runner!(program);
         cairo_runner.program_base = Some(relocatable!(0, 0));
@@ -3343,7 +3341,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/proof_programs/fibonacci.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", true);
@@ -4324,7 +4323,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/example_program.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         let mut cairo_runner = cairo_runner!(program);
         let mut vm = vm!(true); //this true expression dictates that the trace is enabled
         let mut hint_processor = BuiltinHintProcessor::new_empty();
@@ -4464,7 +4464,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/error_msg_function.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         let mut cairo_runner = cairo_runner!(program);
         let mut vm = vm!(true); //this true expression dictates that the trace is enabled
         let mut hint_processor = BuiltinHintProcessor::new_empty();
@@ -4508,7 +4509,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/assert_le_felt_hint.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();
@@ -4532,7 +4534,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/integration.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();
@@ -4556,7 +4559,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/fibonacci.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();
@@ -4581,7 +4585,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/integration.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();

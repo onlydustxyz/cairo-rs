@@ -15,7 +15,8 @@ fn bitwise_integration_test() {
         #[cfg(not(feature = "std"))]
         include_str!("../cairo_programs/bitwise_builtin_test.json"),
         Some("main"),
-    );
+    )
+    .unwrap();
     let mut hint_processor = BuiltinHintProcessor::new_empty();
     let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
     let mut vm = VirtualMachine::new(true);

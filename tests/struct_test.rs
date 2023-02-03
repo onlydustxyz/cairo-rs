@@ -13,7 +13,8 @@ fn struct_integration_test() {
         #[cfg(not(feature = "std"))]
         include_str!("../cairo_programs/struct.json"),
         Some("main"),
-    );
+    )
+    .unwrap();
 
     let mut hint_processor = BuiltinHintProcessor::new_empty();
     let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
