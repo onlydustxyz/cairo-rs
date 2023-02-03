@@ -9,8 +9,7 @@ use cairo_vm::{
 
 #[test]
 fn pedersen_integration_test() {
-    let program = Program::from_file(Path::new("cairo_programs/pedersen_test.json"), Some("main"))
-        .expect("Failed to deserialize program");
+    let program = load_program("cairo_programs/pedersen_test.json", Some("main"));
     let mut hint_processor = BuiltinHintProcessor::new_empty();
     let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
     let mut vm = VirtualMachine::new(true);
@@ -97,4 +96,20 @@ fn pedersen_integration_test() {
         cairo_runner.relocated_trace,
         Some(python_vm_relocated_trace)
     );
+}
+
+fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+    #[cfg(feature = "std")]
+    let program = Program::from_file(Path::new(path), entrypoint)
+        .expect("Call to `Program::from_file()` failed.");
+
+    #[cfg(not(feature = "std"))]
+    let program = {
+        use serde::deserialize_program::{
+            deserialize_program_json, parse_program_json, ProgramJson,
+        };
+        get_program_from_file(&format!("../{path}"), entrypoint)
+    };
+
+    program
 }

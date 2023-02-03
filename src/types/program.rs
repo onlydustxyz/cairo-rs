@@ -293,11 +293,10 @@ mod tests {
 
     #[test]
     fn deserialize_program_test() {
-        let program: Program = Program::from_file(
-            Path::new("cairo_programs/manually_compiled/valid_program_a.json"),
+        let program = load_program(
+            "cairo_programs/manually_compiled/valid_program_a.json",
             Some("main"),
-        )
-        .expect("Failed to deserialize program");
+        );
 
         let builtins: Vec<String> = Vec::new();
         let data: Vec<MaybeRelocatable> = vec![
@@ -377,11 +376,10 @@ mod tests {
     /// Deserialize a program without an entrypoint.
     #[test]
     fn deserialize_program_without_entrypoint_test() {
-        let program: Program = Program::from_file(
-            Path::new("cairo_programs/manually_compiled/valid_program_a.json"),
+        let program = load_program(
+            "cairo_programs/manually_compiled/valid_program_a.json",
             None,
-        )
-        .expect("Failed to deserialize program");
+        );
 
         let builtins: Vec<String> = Vec::new();
 
@@ -476,11 +474,10 @@ mod tests {
 
     #[test]
     fn deserialize_program_constants_test() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/manually_compiled/deserialize_constant_test.json"),
+        let program = load_program(
+            "cairo_programs/manually_compiled/deserialize_constant_test.json",
             Some("main"),
-        )
-        .expect("Failed to deserialize program");
+        );
 
         let constants = [
             ("__main__.compare_abs_arrays.SIZEOF_LOCALS", Felt::zero()),
@@ -532,5 +529,22 @@ mod tests {
         };
 
         assert_eq!(program, Program::default())
+    }
+
+    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+        #[cfg(feature = "std")]
+        let program = Program::from_file(Path::new(path), entrypoint)
+            .expect("Call to `Program::from_file()` failed.");
+
+        #[cfg(not(feature = "std"))]
+        let program = {
+            use crate::utils::test_utils::get_program_from_file;
+            use serde::deserialize_program::{
+                deserialize_program_json, parse_program_json, ProgramJson,
+            };
+            get_program_from_file(&format!("../../{path}"), entrypoint)
+        };
+
+        program
     }
 }

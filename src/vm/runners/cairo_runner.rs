@@ -1544,8 +1544,7 @@ mod tests {
         // This test checks that all addresses from the program segment are marked as accessed at VM initialization.
         // The fibonacci program has 24 instructions, so there should be 24 accessed addresses,
         // from (0, 0) to (0, 23).
-        let program = Program::from_file(Path::new("cairo_programs/fibonacci.json"), Some("main"))
-            .expect("Call to `Program::from_file()` failed.");
+        let program = load_program("cairo_programs/fibonacci.json", Some("main"));
 
         let mut cairo_runner = cairo_runner!(program);
         cairo_runner.program_base = Some(relocatable!(0, 0));
@@ -3332,11 +3331,7 @@ mod tests {
 
     #[test]
     fn end_run_proof_mode_insufficient_allocated_cells() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/proof_programs/fibonacci.json"),
-            Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        let program = load_program("cairo_programs/proof_programs/fibonacci.json", Some("main"));
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", true);
@@ -4311,8 +4306,7 @@ mod tests {
 
     #[test]
     fn run_from_entrypoint_custom_program_test() {
-        let program =
-            Program::from_file(Path::new("cairo_programs/example_program.json"), None).unwrap();
+        let program = load_program("cairo_programs/example_program.json", Some("main"));
         let mut cairo_runner = cairo_runner!(program);
         let mut vm = vm!(true); //this true expression dictates that the trace is enabled
         let mut hint_processor = BuiltinHintProcessor::new_empty();
@@ -4446,11 +4440,10 @@ mod tests {
 
     #[test]
     fn run_from_entrypoint_substitute_error_message_test() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/error_msg_function.json"),
-            None,
-        )
-        .unwrap();
+        let program = load_program(
+            "cairo_programs/bad_programs/error_msg_function.json",
+            Some("main"),
+        );
         let mut cairo_runner = cairo_runner!(program);
         let mut vm = vm!(true); //this true expression dictates that the trace is enabled
         let mut hint_processor = BuiltinHintProcessor::new_empty();
@@ -4488,11 +4481,7 @@ mod tests {
 
     #[test]
     fn get_builtins_final_stack_range_check_builtin() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/assert_le_felt_hint.json"),
-            Some("main"),
-        )
-        .unwrap();
+        let program = load_program("cairo_programs/assert_le_felt_hint.json", Some("main"));
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();
@@ -4510,8 +4499,7 @@ mod tests {
 
     #[test]
     fn get_builtins_final_stack_4_builtins() {
-        let program =
-            Program::from_file(Path::new("cairo_programs/integration.json"), Some("main")).unwrap();
+        let program = load_program("cairo_programs/integration.json", Some("main"));
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();
@@ -4529,8 +4517,7 @@ mod tests {
 
     #[test]
     fn get_builtins_final_stack_no_builtins() {
-        let program =
-            Program::from_file(Path::new("cairo_programs/fibonacci.json"), Some("main")).unwrap();
+        let program = load_program("cairo_programs/fibonacci.json", Some("main"));
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();
@@ -4549,8 +4536,7 @@ mod tests {
     #[test]
 
     fn filter_unused_builtins_test() {
-        let program =
-            Program::from_file(Path::new("cairo_programs/integration.json"), Some("main")).unwrap();
+        let program = load_program("cairo_programs/integration.json", Some("main"));
         let mut runner = cairo_runner!(program);
         let mut vm = vm!();
         let end = runner.initialize(&mut vm).unwrap();
@@ -4564,5 +4550,21 @@ mod tests {
         assert_eq!(exec.builtin_instance_counter.len(), 5);
         let rsc = exec.filter_unused_builtins();
         assert_eq!(rsc.builtin_instance_counter.len(), 4);
+    }
+
+    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+        #[cfg(feature = "std")]
+        let program = Program::from_file(Path::new(path), entrypoint)
+            .expect("Call to `Program::from_file()` failed.");
+
+        #[cfg(not(feature = "std"))]
+        let program = {
+            use serde::deserialize_program::{
+                deserialize_program_json, parse_program_json, ProgramJson,
+            };
+            get_program_from_file(&format!("../../../{path}"), entrypoint)
+        };
+
+        program
     }
 }

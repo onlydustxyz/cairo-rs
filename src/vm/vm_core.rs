@@ -3888,11 +3888,7 @@ mod tests {
 
     #[test]
     fn get_traceback_entries_bad_usort() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/bad_usort.json"),
-            Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        let program = load_program("cairo_programs/bad_programs/bad_usort.json", Some("main"));
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -3912,11 +3908,10 @@ mod tests {
 
     #[test]
     fn get_traceback_entries_bad_dict_update() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/bad_dict_update.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/bad_dict_update.json",
             Some("main"),
-        )
-        .expect("Call to `Program::from_file()` failed.");
+        );
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -3928,5 +3923,21 @@ mod tests {
             .is_err());
         let expected_traceback = vec![(Relocatable::from((1, 2)), Relocatable::from((0, 34)))];
         assert_eq!(vm.get_traceback_entries(), expected_traceback);
+    }
+
+    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+        #[cfg(feature = "std")]
+        let program = Program::from_file(Path::new(path), entrypoint)
+            .expect("Call to `Program::from_file()` failed.");
+
+        #[cfg(not(feature = "std"))]
+        let program = {
+            use serde::deserialize_program::{
+                deserialize_program_json, parse_program_json, ProgramJson,
+            };
+            get_program_from_file(&format!("../../{path}"), entrypoint)
+        };
+
+        program
     }
 }

@@ -1038,11 +1038,10 @@ mod tests {
 
     #[test]
     fn catch_point_same_x() {
-        let program = Path::new("cairo_programs/bad_programs/ec_op_same_x.json");
-        let program = match Program::from_file(program, Some("main")) {
-            Ok(program) => program,
-            Err(error) => panic!("Failed to load program: {}", error),
-        };
+        let program = load_program(
+            "cairo_programs/bad_programs/ec_op_same_x.json",
+            Some("main"),
+        );
 
         let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
         let mut vm = VirtualMachine::new(false);
@@ -1072,11 +1071,11 @@ mod tests {
 
     #[test]
     fn catch_point_not_in_curve() {
-        let program = Program::from_file(
-            Path::new("cairo_programs/bad_programs/ec_op_not_in_curve.json"),
+        let program = load_program(
+            "cairo_programs/bad_programs/ec_op_not_in_curve.json",
             Some("main"),
-        )
-        .unwrap();
+        );
+
         let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
         let mut vm = VirtualMachine::new(false);
         let end = cairo_runner.initialize(&mut vm).unwrap();
@@ -1104,5 +1103,21 @@ mod tests {
             Err(_) => panic!("Wrong error returned, expected RunnerError::EcOpSameXCoordinate"),
             Ok(_) => panic!("Expected run to fail"),
         }
+    }
+
+    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
+        #[cfg(feature = "std")]
+        let program = Program::from_file(Path::new(path), entrypoint)
+            .expect("Call to `Program::from_file()` failed.");
+
+        #[cfg(not(feature = "std"))]
+        let program = {
+            use serde::deserialize_program::{
+                deserialize_program_json, parse_program_json, ProgramJson,
+            };
+            get_program_from_file(&format!("../../../../{path}"), entrypoint)
+        };
+
+        program
     }
 }
