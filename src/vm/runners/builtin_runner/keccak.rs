@@ -263,7 +263,7 @@ mod tests {
     use super::*;
     use crate::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
     use crate::types::program::Program;
-    use crate::utils::test_utils::*;
+    use crate::utils::{load_program, test_utils::*};
     use crate::vm::runners::cairo_runner::CairoRunner;
     use crate::vm::{
         errors::{memory_errors::MemoryError, runner_errors::RunnerError},
@@ -387,7 +387,13 @@ mod tests {
         let mut vm = vm!();
 
         vm.segments.segment_used_sizes = Some(vec![0]);
-        let program = load_program("cairo_programs/_keccak.json", Some("main"));
+        let program = load_program(
+            #[cfg(feature = "std")]
+            "cairo_programs/_keccak.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../../cairo_programs/_keccak.json"),
+            Some("main"),
+        );
 
         let mut cairo_runner = cairo_runner!(program, "recursive");
 

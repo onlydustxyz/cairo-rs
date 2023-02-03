@@ -319,7 +319,7 @@ mod tests {
     use super::*;
     use crate::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
     use crate::types::program::Program;
-    use crate::utils::test_utils::*;
+    use crate::utils::{load_program, test_utils::*};
     use crate::vm::errors::vm_errors::VirtualMachineError;
     use crate::vm::runners::cairo_runner::CairoRunner;
     use crate::vm::security::verify_secure_runner;
@@ -1039,7 +1039,10 @@ mod tests {
     #[test]
     fn catch_point_same_x() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/ec_op_same_x.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../../cairo_programs/bad_programs/ec_op_same_x.json"),
             Some("main"),
         );
 
@@ -1072,7 +1075,10 @@ mod tests {
     #[test]
     fn catch_point_not_in_curve() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/bad_programs/ec_op_not_in_curve.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../../../cairo_programs/bad_programs/ec_op_not_in_curve.json"),
             Some("main"),
         );
 
