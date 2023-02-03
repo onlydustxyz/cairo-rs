@@ -513,11 +513,10 @@ pub mod test_utils {
     }
 
     #[cfg(not(feature = "std"))]
-    pub fn get_program_from_file(
-        path: &str,
+    pub fn get_program_from_static_str(
+        compiled_program_content: &'static str,
         entrypoint: Option<&str>,
     ) -> crate::types::program::Program {
-        let compiled_program_content = include_str!(path);
         let program_json: crate::serde::deserialize_program::ProgramJson =
             serde_json::from_str(compiled_program_content)
                 .expect("File content should be deserializable into a ProgramJson");

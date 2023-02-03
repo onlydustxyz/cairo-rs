@@ -275,6 +275,10 @@ mod tests {
         utils::test_utils::*,
         vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     };
+
+    #[cfg(not(feature = "std"))]
+    use hashbrown::HashMap;
+    #[cfg(feature = "std")]
     use std::collections::HashMap;
 
     #[test]

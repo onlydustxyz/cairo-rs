@@ -1,12 +1,10 @@
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor,
-    types::program::Program,
     vm::{
         runners::cairo_runner::CairoRunner, trace::trace_entry::RelocatedTraceEntry,
         vm_core::VirtualMachine,
     },
 };
-use std::path::Path;
 #[test]
 fn bitwise_integration_test() {
     let program = load_program("cairo_programs/bitwise_builtin_test.json", Some("main"));
@@ -258,15 +256,4 @@ fn bitwise_integration_test() {
     for (i, entry) in python_vm_relocated_trace.iter().enumerate() {
         assert_eq!(&cairo_runner.relocated_trace.as_ref().unwrap()[i], entry);
     }
-}
-
-fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
-    #[cfg(feature = "std")]
-    let program = Program::from_file(Path::new(path), entrypoint)
-        .expect("Call to `Program::from_file()` failed.");
-
-    #[cfg(not(feature = "std"))]
-    let program = { get_program_from_file(&format!("../{path}"), entrypoint) };
-
-    program
 }

@@ -3924,15 +3924,4 @@ mod tests {
         let expected_traceback = vec![(Relocatable::from((1, 2)), Relocatable::from((0, 34)))];
         assert_eq!(vm.get_traceback_entries(), expected_traceback);
     }
-
-    fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
-        #[cfg(feature = "std")]
-        let program = Program::from_file(Path::new(path), entrypoint)
-            .expect("Call to `Program::from_file()` failed.");
-
-        #[cfg(not(feature = "std"))]
-        let program = { get_program_from_file(&format!("../../{path}"), entrypoint) };
-
-        program
-    }
 }

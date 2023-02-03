@@ -31,14 +31,3 @@ fn struct_integration_test() {
 
     assert_eq!(cairo_runner.relocated_trace, Some(vec![relocated_entry]));
 }
-
-fn load_program(path: &str, entrypoint: Option<&str>) -> Program {
-    #[cfg(feature = "std")]
-    let program = Program::from_file(Path::new(path), entrypoint)
-        .expect("Call to `Program::from_file()` failed.");
-
-    #[cfg(not(feature = "std"))]
-    let program = { get_program_from_file(&format!("../{path}"), entrypoint) };
-
-    program
-}
