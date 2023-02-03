@@ -1,17 +1,19 @@
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor,
-    vm::vm_core::VirtualMachine,
+    utils::load_program, vm::vm_core::VirtualMachine,
 };
-use std::path::Path;
 
-use cairo_vm::{
-    types::program::Program,
-    vm::{runners::cairo_runner::CairoRunner, trace::trace_entry::RelocatedTraceEntry},
-};
+use cairo_vm::vm::{runners::cairo_runner::CairoRunner, trace::trace_entry::RelocatedTraceEntry};
 
 #[test]
 fn struct_integration_test() {
-    let program = load_program("cairo_programs/struct.json", Some("main"));
+    let program = load_program(
+        #[cfg(feature = "std")]
+        "cairo_programs/struct.json",
+        #[cfg(not(feature = "std"))]
+        include_str!("../cairo_programs/struct.json"),
+        Some("main"),
+    );
 
     let mut hint_processor = BuiltinHintProcessor::new_empty();
     let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
