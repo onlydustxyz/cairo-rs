@@ -485,7 +485,7 @@ mod tests {
             #[cfg(feature = "std")]
             "cairo_programs/manually_compiled/deserialize_constant_test.json",
             #[cfg(not(feature = "std"))]
-            include_str!("cairo_programs/manually_compiled/deserialize_constant_test.json"),
+            include_str!("../../cairo_programs/manually_compiled/deserialize_constant_test.json"),
             Some("main"),
         );
 
