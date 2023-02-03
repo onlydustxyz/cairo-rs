@@ -268,8 +268,6 @@ impl Location {
                 ));
             }
         }
-        #[cfg(not(feature = "std"))]
-        string.push_str(&format!("\n{}", self.get_location_marks()));
         string
     }
 
@@ -386,10 +384,22 @@ mod test {
             start_col: 1,
         };
         let message = String::from("While expanding the reference");
-        assert_eq!(
-            location.to_string(&message),
-            String::from("Folder/file.cairo:1:1: While expanding the reference")
-        )
+
+        #[cfg(feature = "std")]
+        {
+            assert_eq!(
+                location.to_string(&message),
+                String::from("Folder/file.cairo:1:1: While expanding the reference")
+            );
+        }
+
+        #[cfg(not(feature = "std"))]
+        {
+            assert_eq!(
+                location.to_string(&message),
+                String::from("1:1: While expanding the reference")
+            )
+        }
     }
 
     #[test]
@@ -696,10 +706,20 @@ mod test {
             start_col: 1,
         };
         let message = String::from("While expanding the reference");
-        assert_eq!(
-            location.to_string_with_content(&message),
-            String::from("Folder/file.cairo:1:1: While expanding the reference")
-        )
+        #[cfg(feature = "std")]
+        {
+            assert_eq!(
+                location.to_string_with_content(&message),
+                String::from("Folder/file.cairo:1:1: While expanding the reference")
+            )
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            assert_eq!(
+                location.to_string_with_content(&message),
+                String::from("1:1: While expanding the reference")
+            )
+        }
     }
 
     #[test]
