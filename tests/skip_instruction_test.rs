@@ -17,7 +17,8 @@ fn skip_next_instruction_test() {
             "../cairo_programs/noretrocompat/test_skip_next_instruction.noretrocompat.json"
         ),
         Some("main"),
-    );
+    )
+    .unwrap();
 
     let mut hint_processor = BuiltinHintProcessor::new_empty();
 

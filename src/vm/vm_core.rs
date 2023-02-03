@@ -3890,7 +3890,14 @@ mod tests {
 
     #[test]
     fn get_traceback_entries_bad_usort() {
-        let program = load_program("cairo_programs/bad_programs/bad_usort.json", Some("main"));
+        let program = load_program(
+            #[cfg(feature = "std")]
+            "cairo_programs/bad_programs/bad_usort.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../cairo_programs/bad_programs/bad_usort.json"),
+            Some("main"),
+        )
+        .unwrap();
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -3916,7 +3923,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../cairo_programs/bad_programs/bad_dict_update.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);

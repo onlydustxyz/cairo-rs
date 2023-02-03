@@ -294,14 +294,14 @@ mod tests {
 
     #[test]
     fn deserialize_program_test() {
-        #[cfg(feature = "std")]
         let program = load_program(
             #[cfg(feature = "std")]
             "cairo_programs/manually_compiled/valid_program_a.json",
             #[cfg(not(feature = "std"))]
             include_str!("../../cairo_programs/manually_compiled/valid_program_a.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let builtins: Vec<String> = Vec::new();
         let data: Vec<MaybeRelocatable> = vec![
@@ -387,7 +387,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../cairo_programs/manually_compiled/valid_program_a.json"),
             None,
-        );
+        )
+        .unwrap();
 
         let builtins: Vec<String> = Vec::new();
 
@@ -488,7 +489,8 @@ mod tests {
             #[cfg(not(feature = "std"))]
             include_str!("../../cairo_programs/manually_compiled/deserialize_constant_test.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let constants = [
             ("__main__.compare_abs_arrays.SIZEOF_LOCALS", Felt::zero()),

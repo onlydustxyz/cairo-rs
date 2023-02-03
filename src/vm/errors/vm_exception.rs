@@ -645,7 +645,8 @@ mod test {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/bad_dict_update.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -667,7 +668,8 @@ mod test {
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/bad_usort.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
         let mut vm = vm!();
@@ -823,7 +825,8 @@ cairo_programs/bad_programs/bad_range_check.cairo:11:5: (pc=0:6)
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/bad_range_check.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -860,7 +863,8 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/bad_usort.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
 
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let mut cairo_runner = cairo_runner!(program, "all", false);
@@ -882,7 +886,8 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/error_msg_attr_tempvar.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         // This program uses a tempvar inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
@@ -902,7 +907,8 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/error_msg_attr_tempvar.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         // This program uses a tempvar inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
@@ -925,7 +931,8 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/error_msg_attr_struct.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         // This program uses a struct inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
@@ -945,7 +952,8 @@ cairo_programs/bad_programs/bad_usort.cairo:64:5: (pc=0:60)
             #[cfg(not(feature = "std"))]
             include_str!("../../../cairo_programs/bad_programs/error_msg_attr_struct.json"),
             Some("main"),
-        );
+        )
+        .unwrap();
         // This program uses a struct inside an error attribute
         // This reference should be rejected when substituting the error attribute references
         let runner = cairo_runner!(program);
