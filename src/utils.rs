@@ -558,7 +558,13 @@ mod test {
     };
     use felt::Felt;
     use num_traits::One;
-    use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
+    use std::{any::Any, cell::RefCell, rc::Rc};
+
+    #[cfg(feature = "std")]
+    use std::collections::HashMap;
+
+    #[cfg(not(feature = "std"))]
+    use hashbrown::HashMap;
 
     use super::*;
 

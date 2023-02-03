@@ -271,7 +271,6 @@ mod tests {
     use crate::{relocatable, utils::test_utils::*};
     use felt::Felt;
     use num_traits::Num;
-    use std::vec;
 
     #[test]
     fn add_segment_no_size() {

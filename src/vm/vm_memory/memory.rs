@@ -683,6 +683,7 @@ mod memory_tests {
     }
 
     #[test]
+    #[allow(unused_must_use)]
     fn validate_existing_memory_for_range_check_relocatable_value() {
         let mut builtin = RangeCheckBuiltinRunner::new(8, 8, true);
         let mut segments = MemorySegmentManager::new();

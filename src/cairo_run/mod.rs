@@ -1,5 +1,8 @@
 use std::prelude::v1::*;
 
+#[cfg(test)]
+mod cairo_run_test;
+
 use crate::{
     hint_processor::hint_processor_definition::HintProcessor,
     types::program::Program,

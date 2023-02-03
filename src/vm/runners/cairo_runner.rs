@@ -1248,7 +1248,12 @@ mod tests {
     };
     use felt::felt_str;
     use num_traits::One;
+
+    #[cfg(feature = "std")]
     use std::collections::{HashMap, HashSet};
+
+    #[cfg(not(feature = "std"))]
+    use hashbrown::{HashMap, HashSet};
 
     #[test]
     fn check_memory_usage_ok_case() {

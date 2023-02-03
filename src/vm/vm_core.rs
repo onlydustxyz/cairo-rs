@@ -3894,7 +3894,7 @@ mod tests {
             #[cfg(feature = "std")]
             "cairo_programs/bad_programs/bad_usort.json",
             #[cfg(not(feature = "std"))]
-            include_str!("../cairo_programs/bad_programs/bad_usort.json"),
+            include_str!("../../cairo_programs/bad_programs/bad_usort.json"),
             Some("main"),
         )
         .unwrap();

@@ -396,6 +396,8 @@ mod tests {
     use super::*;
     use felt::felt_str;
     use num_traits::Zero;
+
+    #[cfg(feature = "std")]
     use std::{fs::File, io::BufReader};
 
     #[test]
@@ -744,7 +746,7 @@ mod tests {
             #[cfg(feature = "std")]
             "cairo_programs/manually_compiled/valid_program_a.json",
             #[cfg(not(feature = "std"))]
-            include_str!("../cairo_programs/manually_compiled/valid_program_a.json"),
+            include_str!("../../cairo_programs/manually_compiled/valid_program_a.json"),
             Some("main"),
         )
         .unwrap();
@@ -868,7 +870,7 @@ mod tests {
     fn deserialize_constant() {
         #[cfg(not(feature = "std"))]
         let program_json: crate::serde::deserialize_program::ProgramJson = serde_json::from_str(
-            include_str!("../cairo_programs/manually_compiled/deserialize_constant_test.json"),
+            include_str!("../../cairo_programs/manually_compiled/deserialize_constant_test.json"),
         )
         .unwrap();
 
@@ -1288,7 +1290,9 @@ mod tests {
         let debug_info: DebugInfo = DebugInfo { instruction_locations: HashMap::from(
             [
                 (4, InstructionLocation {
-                    inst: Location { end_line: 9, end_col: 36,input_file: InputFile { filename: String::from("test/contracts/cairo/always_fail.cairo") }, parent_location: Some(
+                    inst: Location { end_line: 9, end_col: 36,
+                        #[cfg(feature = "std")]
+                        input_file: InputFile { filename: String::from("test/contracts/cairo/always_fail.cairo") }, parent_location: Some(
                         (Box::new(Location {
                             end_line: 9,
                             end_col: 36,
@@ -1321,10 +1325,19 @@ mod tests {
 
     #[test]
     fn deserialize_program_with_type_definition() {
-        let file = File::open("cairo_programs/uint256_integration_tests.json").unwrap();
-        let reader = BufReader::new(file);
+        #[cfg(not(feature = "std"))]
+        let program_json: crate::serde::deserialize_program::ProgramJson = serde_json::from_str(
+            include_str!("../../cairo_programs/uint256_integration_tests.json"),
+        )
+        .unwrap();
 
-        let program_json: ProgramJson = serde_json::from_reader(reader).unwrap();
+        #[cfg(feature = "std")]
+        let program_json: ProgramJson = {
+            let file = File::open("cairo_programs/uint256_integration_tests.json").unwrap();
+            let mut reader = BufReader::new(file);
+
+            serde_json::from_reader(&mut reader).unwrap()
+        };
 
         assert_eq!(
             program_json.identifiers["starkware.cairo.common.alloc.alloc.Return"]
