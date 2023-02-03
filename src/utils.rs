@@ -511,18 +511,33 @@ pub mod test_utils {
         let scope_value = scopes.get_any_boxed_ref(name).unwrap();
         assert_eq!(scope_value.downcast_ref::<T>(), Some(&value));
     }
+}
+
+#[cfg(not(feature = "std"))]
+fn get_program_from_static_str(
+    compiled_program_content: &'static str,
+    entrypoint: Option<&str>,
+) -> crate::types::program::Program {
+    let program_json: crate::serde::deserialize_program::ProgramJson =
+        serde_json::from_str(compiled_program_content)
+            .expect("File content should be deserializable into a ProgramJson");
+    crate::serde::deserialize_program::parse_program_json(program_json, entrypoint)
+        .expect("Invalid Program")
+}
+
+pub fn load_program(
+    #[cfg(feature = "std")] path: &'static str,
+    #[cfg(not(feature = "std"))] compiled_program_content: &'static str,
+    entrypoint: Option<&str>,
+) -> crate::types::program::Program {
+    #[cfg(feature = "std")]
+    let program = crate::types::program::Program::from_file(std::path::Path::new(path), entrypoint)
+        .expect("Call to `Program::from_file()` failed.");
 
     #[cfg(not(feature = "std"))]
-    pub fn get_program_from_static_str(
-        compiled_program_content: &'static str,
-        entrypoint: Option<&str>,
-    ) -> crate::types::program::Program {
-        let program_json: crate::serde::deserialize_program::ProgramJson =
-            serde_json::from_str(compiled_program_content)
-                .expect("File content should be deserializable into a ProgramJson");
-        crate::serde::deserialize_program::parse_program_json(program_json, entrypoint)
-            .expect("Invalid Program")
-    }
+    let program = { get_program_from_static_str(compiled_program_content, entrypoint) };
+
+    program
 }
 
 #[cfg(test)]

@@ -1,13 +1,21 @@
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor,
+    utils::load_program,
     vm::{
         runners::cairo_runner::CairoRunner, trace::trace_entry::RelocatedTraceEntry,
         vm_core::VirtualMachine,
     },
 };
+
 #[test]
 fn bitwise_integration_test() {
-    let program = load_program("cairo_programs/bitwise_builtin_test.json", Some("main"));
+    let program = load_program(
+        #[cfg(feature = "std")]
+        "cairo_programs/bitwise_builtin_test.json",
+        #[cfg(not(feature = "std"))]
+        include_str!("../cairo_programs/bitwise_builtin_test.json"),
+        Some("main"),
+    );
     let mut hint_processor = BuiltinHintProcessor::new_empty();
     let mut cairo_runner = CairoRunner::new(&program, "all", false).unwrap();
     let mut vm = VirtualMachine::new(true);
