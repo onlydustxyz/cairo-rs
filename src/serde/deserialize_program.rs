@@ -808,7 +808,10 @@ mod tests {
     #[test]
     fn deserialize_program_without_entrypoint_test() {
         let program = load_program(
+            #[cfg(feature = "std")]
             "cairo_programs/manually_compiled/valid_program_a.json",
+            #[cfg(not(feature = "std"))]
+            include_str!("../../cairo_programs/manually_compiled/valid_program_a.json"),
             None,
         )
         .unwrap();
