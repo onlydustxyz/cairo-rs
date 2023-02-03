@@ -664,9 +664,12 @@ mod tests {
     #[test]
     fn deserialize_program_json_from_json_file_a() {
         // Open json file with (valid) even length encoded hex
+        #[cfg(feature = "std")]
         let file = File::open("cairo_programs/manually_compiled/valid_program_a.json").unwrap();
+        #[cfg(feature = "std")]
         let mut reader = BufReader::new(file);
 
+        #[cfg(feature = "std")]
         let program_json: ProgramJson = serde_json::from_reader(&mut reader).unwrap();
         let builtins: Vec<String> = Vec::new();
 
@@ -682,7 +685,9 @@ mod tests {
     #[test]
     fn deserialize_program_json_from_json_file_b() {
         // Open json file with (valid) odd length encoded hex
+        #[cfg(feature = "std")]
         let file = File::open("cairo_programs/manually_compiled/valid_program_b.json").unwrap();
+        #[cfg(feature = "std")]
         let mut reader = BufReader::new(file);
 
         let program_json: ProgramJson = serde_json::from_reader(&mut reader).unwrap();
@@ -700,8 +705,10 @@ mod tests {
     #[test]
     fn deserialize_program_json_from_json_file_gives_error() {
         // Open json file with (invalid) even length encoded hex
+        #[cfg(feature = "std")]
         let even_length_file =
             File::open("cairo_programs/manually_compiled/invalid_even_length_hex.json").unwrap();
+        #[cfg(feature = "std")]
         let mut reader = BufReader::new(even_length_file);
 
         let even_result: Result<ProgramJson, _> = serde_json::from_reader(&mut reader);
@@ -720,10 +727,13 @@ mod tests {
 
     #[test]
     fn deserialize_missing_entrypoint_gives_error() {
+        #[cfg(feature = "std")]
         let even_length_file =
             File::open("cairo_programs/manually_compiled/valid_program_a.json").unwrap();
+        #[cfg(feature = "std")]
         let reader = BufReader::new(even_length_file);
 
+        #[cfg(feature = "std")]
         let deserialization_result =
             deserialize_and_parse_program(reader, Some("missing_function"));
         assert!(deserialization_result.is_err());
@@ -735,10 +745,13 @@ mod tests {
 
     #[test]
     fn deserialize_program_test() {
+        #[cfg(feature = "std")]
         let even_length_file =
             File::open("cairo_programs/manually_compiled/valid_program_a.json").unwrap();
+        #[cfg(feature = "std")]
         let reader = BufReader::new(even_length_file);
 
+        #[cfg(feature = "std")]
         let program: Program = deserialize_and_parse_program(reader, Some("main"))
             .expect("Failed to deserialize program");
 
@@ -798,10 +811,13 @@ mod tests {
     /// Deserialize a program without an entrypoint.
     #[test]
     fn deserialize_program_without_entrypoint_test() {
+        #[cfg(feature = "std")]
         let even_length_file =
             File::open("cairo_programs/manually_compiled/valid_program_a.json").unwrap();
+        #[cfg(feature = "std")]
         let reader = BufReader::new(even_length_file);
 
+        #[cfg(feature = "std")]
         let program: Program =
             deserialize_and_parse_program(reader, None).expect("Failed to deserialize program");
 
@@ -860,8 +876,10 @@ mod tests {
 
     #[test]
     fn deserialize_constant() {
+        #[cfg(feature = "std")]
         let file =
             File::open("cairo_programs/manually_compiled/deserialize_constant_test.json").unwrap();
+        #[cfg(feature = "std")]
         let mut reader = BufReader::new(file);
 
         let program_json: ProgramJson = serde_json::from_reader(&mut reader).unwrap();
@@ -1171,6 +1189,7 @@ mod tests {
                         inst: Location {
                             end_line: 7,
                             end_col: 73,
+                            #[cfg(feature = "std")]
                             input_file: InputFile { filename: String::from("/Users/user/test/env/lib/python3.9/site-packages/starkware/cairo/lang/compiler/lib/registers.cairo") },
                             parent_location: None,
                             start_line: 7,
@@ -1185,6 +1204,7 @@ mod tests {
                         inst: Location {
                             end_line: 5,
                             end_col: 40,
+                            #[cfg(feature = "std")]
                             input_file: InputFile { filename: String::from("/Users/user/test/env/lib/python3.9/site-packages/starkware/cairo/common/alloc.cairo") },
                             parent_location: None,
                             start_line: 5,
@@ -1267,6 +1287,7 @@ mod tests {
 
         let program_json: ProgramJson = serde_json::from_str(valid_json).unwrap();
 
+        #[cfg(feature = "std")]
         let debug_info: DebugInfo = DebugInfo { instruction_locations: HashMap::from(
             [
                 (4, InstructionLocation {
@@ -1301,7 +1322,9 @@ mod tests {
 
     #[test]
     fn deserialize_program_with_type_definition() {
+        #[cfg(feature = "std")]
         let file = File::open("cairo_programs/uint256_integration_tests.json").unwrap();
+        #[cfg(feature = "std")]
         let reader = BufReader::new(file);
 
         let program_json: ProgramJson = serde_json::from_reader(reader).unwrap();
