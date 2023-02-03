@@ -908,11 +908,13 @@ impl CairoRunner {
                 .get_integer(&(base, i).into())
                 .map_err(|_| RunnerError::MemoryGet((base, i).into()))?
                 .to_bigint();
+
             #[cfg(feature = "std")]
             writeln!(dest, "{}", value).map_err(|_| RunnerError::WriteFail)?;
+
             #[cfg(not(feature = "std"))]
             {
-                dest.extend(value.to_bytes_be().1);
+                dest.extend(value.to_string().as_bytes());
                 dest.extend("\n".bytes());
             }
         }
