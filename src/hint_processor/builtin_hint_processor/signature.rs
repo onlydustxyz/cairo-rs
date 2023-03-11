@@ -44,7 +44,7 @@ pub fn verify_ecdsa_signature(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vm::runners::builtin_runner::SIGNATURE_BUILTIN_NAME;
+    use crate::serde::deserialize_program::BuiltinName;
     use crate::vm::vm_memory::memory_segments::MemorySegmentManager;
     use crate::{
         any_box,
@@ -76,7 +76,7 @@ mod tests {
     fn verify_ecdsa_signature_valid() {
         let mut vm = vm!();
         vm.builtin_runners = vec![(
-            SIGNATURE_BUILTIN_NAME,
+            BuiltinName::ecdsa,
             SignatureBuiltinRunner::new(&EcdsaInstanceDef::default(), true).into(),
         )];
         vm.segments = segments![
@@ -105,7 +105,7 @@ mod tests {
     fn verify_ecdsa_signature_invalid_ecdsa_ptr() {
         let mut vm = vm!();
         vm.builtin_runners = vec![(
-            SIGNATURE_BUILTIN_NAME,
+            BuiltinName::ecdsa,
             SignatureBuiltinRunner::new(&EcdsaInstanceDef::default(), true).into(),
         )];
         vm.segments = segments![
@@ -134,7 +134,7 @@ mod tests {
     fn verify_ecdsa_signature_invalid_input_cell() {
         let mut vm = vm!();
         vm.builtin_runners = vec![(
-            SIGNATURE_BUILTIN_NAME,
+            BuiltinName::ecdsa,
             SignatureBuiltinRunner::new(&EcdsaInstanceDef::default(), true).into(),
         )];
         vm.segments = segments![

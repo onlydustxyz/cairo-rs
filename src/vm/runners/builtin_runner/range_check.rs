@@ -250,6 +250,7 @@ impl RangeCheckBuiltinRunner {
 mod tests {
     use super::*;
     use crate::relocatable;
+    use crate::serde::deserialize_program::BuiltinName;
     use crate::stdlib::collections::HashMap;
     use crate::vm::vm_memory::memory::Memory;
     use crate::{
@@ -386,7 +387,7 @@ mod tests {
         vm.segments.segment_used_sizes = Some(vec![0]);
 
         let program = program!(
-            builtins = vec![RANGE_CHECK_BUILTIN_NAME],
+            builtins = vec![BuiltinName::range_check],
             data = vec_data!(
                 (4612671182993129469_i64),
                 (5189976364521848832_i64),
@@ -430,7 +431,7 @@ mod tests {
         let mut vm = vm!();
 
         let program = program!(
-            builtins = vec![RANGE_CHECK_BUILTIN_NAME],
+            builtins = vec![BuiltinName::range_check],
             data = vec_data!(
                 (4612671182993129469_i64),
                 (5189976364521848832_i64),

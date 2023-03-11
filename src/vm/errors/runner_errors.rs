@@ -1,4 +1,7 @@
-use crate::stdlib::{collections::HashSet, prelude::*};
+use crate::{
+    serde::deserialize_program::BuiltinName,
+    stdlib::{collections::HashSet, prelude::*},
+};
 
 #[cfg(feature = "std")]
 use thiserror::Error;
@@ -43,7 +46,7 @@ pub enum RunnerError {
     #[error("EcOpBuiltin: point {0:?} is not on the curve")]
     PointNotOnCurve((Felt, Felt)),
     #[error("Builtin(s) {0:?} not present in layout {1}")]
-    NoBuiltinForInstance(HashSet<&'static str>, String),
+    NoBuiltinForInstance(HashSet<BuiltinName>, String),
     #[error("Invalid layout {0}")]
     InvalidLayoutName(String),
     #[error("end_run called twice.")]
