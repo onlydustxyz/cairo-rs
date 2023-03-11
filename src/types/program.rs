@@ -9,12 +9,12 @@ use crate::{
     types::{errors::program_errors::ProgramError, relocatable::MaybeRelocatable},
 };
 use felt::{Felt, PRIME_STR};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "std")]
 use std::path::Path;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Program {
     pub builtins: Vec<BuiltinName>,
     pub prime: String,
