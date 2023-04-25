@@ -1,3 +1,4 @@
+use crate::serde::deserialize_program::Reference;
 use crate::stdlib::{collections::HashMap, prelude::*, sync::Arc};
 
 use crate::{
@@ -123,6 +124,52 @@ impl Program {
 
     pub fn get_identifier(&self, id: &str) -> Option<&Identifier> {
         self.shared_program_data.identifiers.get(id)
+    }
+}
+
+impl Program {
+    pub fn builtins(&self) -> &Vec<BuiltinName> {
+        &self.shared_program_data.builtins
+    }
+
+    pub fn data(&self) -> &Vec<MaybeRelocatable> {
+        &self.shared_program_data.data
+    }
+
+    pub fn hints(&self) -> &HashMap<usize, Vec<HintParams>> {
+        &self.shared_program_data.hints
+    }
+
+    pub fn main(&self) -> &Option<usize> {
+        &self.shared_program_data.main
+    }
+
+    pub fn start(&self) -> &Option<usize> {
+        &self.shared_program_data.start
+    }
+
+    pub fn end(&self) -> &Option<usize> {
+        &self.shared_program_data.end
+    }
+
+    pub fn error_message_attributes(&self) -> &Vec<Attribute> {
+        &self.shared_program_data.error_message_attributes
+    }
+
+    pub fn instruction_locations(&self) -> &Option<HashMap<usize, InstructionLocation>> {
+        &self.shared_program_data.instruction_locations
+    }
+
+    pub fn identifiers(&self) -> &HashMap<String, Identifier> {
+        &self.shared_program_data.identifiers
+    }
+
+    pub fn constants(&self) -> &HashMap<String, Felt252> {
+        &self.constants
+    }
+
+    pub fn reference_manager(&self) -> &ReferenceManager {
+        &self.reference_manager
     }
 }
 
