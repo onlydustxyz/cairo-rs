@@ -82,11 +82,12 @@ use crate::{
         hint_processor_definition::{HintProcessor, HintReference},
     },
     serde::deserialize_program::ApTracking,
-    stdlib::{any::Any, collections::HashMap, prelude::*, rc::Rc},
+    stdlib::{any::Any, cell::RefCell, collections::HashMap, prelude::*, rc::Rc},
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use felt::Felt252;
+use rand::{rngs::SmallRng, SeedableRng};
 
 #[cfg(feature = "skip_next_instruction_hint")]
 use crate::hint_processor::builtin_hint_processor::skip_next_instruction::skip_next_instruction;
@@ -574,7 +575,8 @@ impl HintProcessor for BuiltinHintProcessor {
                 unsigned_div_rem_uint768_by_uint384(vm, &hint_data.ids_data, &hint_data.ap_tracking)
             }
             hint_code::GET_SQUARE_ROOT => {
-                get_square_root(vm, &hint_data.ids_data, &hint_data.ap_tracking)
+                let rng = Rc::new(RefCell::new(SmallRng::seed_from_u64(42)));
+                get_square_root(vm, &hint_data.ids_data, &hint_data.ap_tracking, rng)
             }
             hint_code::UINT384_SIGNED_NN => {
                 uint384_signed_nn(vm, &hint_data.ids_data, &hint_data.ap_tracking)

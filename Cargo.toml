@@ -1,5 +1,11 @@
 [workspace]
-members = [".", "cairo-vm-cli", "felt", "hint_accountant", "./deps/parse-hyperlinks"]
+members = [
+    ".",
+    "cairo-vm-cli",
+    "felt",
+    "hint_accountant",
+    "./deps/parse-hyperlinks",
+]
 
 [package]
 name = "cairo-vm"
@@ -32,11 +38,16 @@ hooks = []
 
 [dependencies]
 mimalloc = { version = "0.1.29", default-features = false, optional = true }
-num-bigint = { version = "0.4", features = ["serde", "rand"], default-features = false }
+num-bigint = { version = "0.4", features = [
+    "serde",
+    "rand",
+], default-features = false }
 rand = { version = "0.8.3", features = ["small_rng"], default-features = false }
 num-traits = { version = "0.2", default-features = false }
 num-integer = { version = "0.1.45", default-features = false }
-num-prime = {version = "0.4.3", features = ["big-int"], default-features = false }
+num-prime = { git = " https://github.com/tdelabro/num-prime.git", branch = "no_std-support", default-features = false, features = [
+    "big-int",
+] }
 serde = { version = "1.0", features = ["derive"], default-features = false }
 serde_bytes = { version = "0.11.9", default-features = false, features = [
     "alloc",
@@ -83,6 +94,9 @@ bitvec = { version = "1", default-features = false, features = ["alloc"] }
 [dev-dependencies]
 assert_matches = "1.5.0"
 rstest = { version = "0.17.0", default-features = false }
+original-num-prime = { package = "num-prime", version = "0.4.3", features = [
+    "big-int",
+], default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.34"

@@ -1,13 +1,18 @@
-use core::cmp::min;
-
-use crate::stdlib::ops::Shr;
+use crate::stdlib::{cell::RefCell, cmp::min, ops::Shr, rc::Rc, vec::Vec};
 use crate::types::errors::math_errors::MathError;
 use felt::Felt252;
 use num_bigint::{BigInt, BigUint, RandBigInt};
 use num_integer::Integer;
-use num_prime::nt_funcs::is_prime;
+use num_prime::nt_funcs::is_prime64;
+use num_prime::PrimalityUtils;
+use num_prime::{buffer::NaiveBuffer, Primality, PrimalityTestConfig, PrimeBuffer};
 use num_traits::{Bounded, One, Pow, Signed, Zero};
-use rand::{rngs::SmallRng, SeedableRng};
+use num_traits::{FromPrimitive, ToPrimitive};
+use rand::{rngs::SmallRng, RngCore, SeedableRng};
+
+#[cfg(not(feature = "std"))]
+use num_traits::float::FloatCore;
+
 ///Returns the integer square root of the nonnegative integer n.
 ///This is the floor of the exact square root of n.
 ///Unlike math.sqrt(), this function doesn't have rounding error issues.
@@ -185,9 +190,85 @@ pub fn sqrt(n: &Felt252) -> Felt252 {
     }
 }
 
+trait MyPrime {
+    fn my_is_prime(&self, n: &BigUint, rng: Rc<RefCell<dyn RngCore>>) -> Primality;
+}
+
+impl MyPrime for NaiveBuffer {
+    fn my_is_prime(&self, target: &BigUint, rng: Rc<RefCell<dyn RngCore>>) -> Primality {
+        // shortcuts
+        if target.is_even() {
+            return if target == &BigUint::from_u8(2u8).unwrap() {
+                Primality::Yes
+            } else {
+                Primality::No
+            };
+        }
+
+        // do deterministic test if target is under 2^64
+        if let Some(x) = target.to_u64() {
+            return match is_prime64(x) {
+                true => Primality::Yes,
+                false => Primality::No,
+            };
+        }
+
+        let config = PrimalityTestConfig::default();
+        let mut probability = 1.;
+
+        // miller-rabin test
+        let mut witness_list: Vec<u64> = Vec::new();
+        if config.sprp_trials > 0 {
+            witness_list.extend(self.iter().take(config.sprp_trials));
+            probability *= 1. - 0.25f32.powi(config.sprp_trials as i32);
+        }
+        if config.sprp_random_trials > 0 {
+            let mut key = [0u8; 16];
+            rng.borrow_mut().fill_bytes(&mut key);
+            for _ in 0..config.sprp_random_trials {
+                // we have ensured target is larger than 2^64
+                let mut w: u64 = rng.borrow_mut().next_u64();
+                while witness_list.iter().find(|&x| x == &w).is_some() {
+                    w = rng.borrow_mut().next_u64();
+                }
+                witness_list.push(w);
+            }
+            probability *= 1. - 0.25f32.powi(config.sprp_random_trials as i32);
+        }
+        if !witness_list
+            .into_iter()
+            .all(|x| target.is_sprp(BigUint::from_u64(x).unwrap()))
+        {
+            return Primality::No;
+        }
+
+        // lucas probable prime test
+        if config.slprp_test {
+            probability *= 1. - 4f32 / 15f32;
+            if !target.is_slprp(None, None) {
+                return Primality::No;
+            }
+        }
+        if config.eslprp_test {
+            probability *= 1. - 4f32 / 15f32;
+            if !target.is_eslprp(None) {
+                return Primality::No;
+            }
+        }
+
+        Primality::Probable(probability)
+    }
+}
+
 // Adapted from sympy _sqrt_prime_power with k == 1
-pub fn sqrt_prime_power(a: &BigUint, p: &BigUint) -> Option<BigUint> {
-    if p.is_zero() || !is_prime(p, None).probably() {
+pub fn sqrt_prime_power(
+    a: &BigUint,
+    p: &BigUint,
+    rng: Rc<RefCell<dyn RngCore>>,
+) -> Option<BigUint> {
+    let buffer = NaiveBuffer::new();
+
+    if p.is_zero() || !buffer.my_is_prime(p, rng).probably() {
         return None;
     }
     let two = BigUint::from(2_u32);
@@ -314,9 +395,6 @@ mod tests {
     use assert_matches::assert_matches;
 
     use num_traits::Num;
-
-    #[cfg(not(target_arch = "wasm32"))]
-    use num_prime::RandPrime;
 
     #[cfg(not(target_arch = "wasm32"))]
     use proptest::prelude::*;
@@ -748,7 +826,8 @@ mod tests {
     fn test_sqrt_prime_power() {
         let n: BigUint = 25_u32.into();
         let p: BigUint = 18446744069414584321_u128.into();
-        assert_eq!(sqrt_prime_power(&n, &p), Some(5_u32.into()));
+        let rng = Rc::new(RefCell::new(SmallRng::from_seed([42; 32])));
+        assert_eq!(sqrt_prime_power(&n, &p, rng), Some(5_u32.into()));
     }
 
     #[test]
@@ -756,7 +835,8 @@ mod tests {
     fn test_sqrt_prime_power_p_is_zero() {
         let n = BigUint::one();
         let p: BigUint = BigUint::zero();
-        assert_eq!(sqrt_prime_power(&n, &p), None);
+        let rng = Rc::new(RefCell::new(SmallRng::from_seed([42; 32])));
+        assert_eq!(sqrt_prime_power(&n, &p, rng), None);
     }
 
     #[test]
@@ -771,7 +851,8 @@ mod tests {
             203, 195, 76, 193, 149, 78, 109, 146, 240, 126, 182, 115, 161, 238, 30, 118, 157, 252,
         ]);
 
-        assert_eq!(sqrt_prime_power(&n, &p), None);
+        let rng = Rc::new(RefCell::new(SmallRng::from_seed([42; 32])));
+        assert_eq!(sqrt_prime_power(&n, &p, rng), None);
     }
 
     #[test]
@@ -779,7 +860,8 @@ mod tests {
     fn test_sqrt_prime_power_none() {
         let n: BigUint = 10_u32.into();
         let p: BigUint = 602_u32.into();
-        assert_eq!(sqrt_prime_power(&n, &p), None);
+        let rng = Rc::new(RefCell::new(SmallRng::from_seed([42; 32])));
+        assert_eq!(sqrt_prime_power(&n, &p, rng), None);
     }
 
     #[test]
@@ -787,7 +869,8 @@ mod tests {
     fn test_sqrt_prime_power_prime_two() {
         let n: BigUint = 25_u32.into();
         let p: BigUint = 2_u32.into();
-        assert_eq!(sqrt_prime_power(&n, &p), Some(BigUint::one()));
+        let rng = Rc::new(RefCell::new(SmallRng::from_seed([42; 32])));
+        assert_eq!(sqrt_prime_power(&n, &p, rng), Some(BigUint::one()));
     }
 
     #[test]
@@ -795,8 +878,9 @@ mod tests {
     fn test_sqrt_prime_power_prime_mod_8_is_5_sign_not_one() {
         let n: BigUint = 676_u32.into();
         let p: BigUint = 9956234341095173_u64.into();
+        let rng = Rc::new(RefCell::new(SmallRng::from_seed([42; 32])));
         assert_eq!(
-            sqrt_prime_power(&n, &p),
+            sqrt_prime_power(&n, &p, rng),
             Some(BigUint::from(9956234341095147_u64))
         );
     }
@@ -806,8 +890,9 @@ mod tests {
     fn test_sqrt_prime_power_prime_mod_8_is_5_sign_is_one() {
         let n: BigUint = 130283432663_u64.into();
         let p: BigUint = 743900351477_u64.into();
+        let rng = Rc::new(RefCell::new(SmallRng::from_seed([42; 32])));
         assert_eq!(
-            sqrt_prime_power(&n, &p),
+            sqrt_prime_power(&n, &p, rng),
             Some(BigUint::from(123538694848_u64))
         );
     }
@@ -865,9 +950,9 @@ mod tests {
             let mut rng = SmallRng::seed_from_u64(*y);
             let x = &BigUint::from_bytes_be(x);
             // Generate a prime here instead of relying on y, otherwise y may never be a prime number
-            let p : &BigUint = &RandPrime::gen_prime(&mut rng, 384,  None);
+            let p : &BigUint = &original_num_prime::RandPrime::gen_prime(&mut rng, 384,  None);
             let x_sq = x * x;
-            if let Some(sqrt) = sqrt_prime_power(&x_sq, p) {
+            if let Some(sqrt) = sqrt_prime_power(&x_sq, p, Rc::new(RefCell::new(rng))) {
                 if &sqrt != x {
                     prop_assert_eq!(&(p - sqrt), x);
                 } else {

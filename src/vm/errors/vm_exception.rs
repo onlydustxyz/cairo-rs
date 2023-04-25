@@ -271,7 +271,7 @@ impl Location {
         if !(0 < self.start_line && ((self.start_line - 1) as usize) < split_lines.len()) {
             return String::new();
         }
-        let start_line = split_lines[((self.start_line - 1) as usize)];
+        let start_line = split_lines[(self.start_line - 1) as usize];
         let start_col = self.start_col as usize;
         let mut result = format!("{start_line}\n");
         let end_col = if self.start_line == self.end_line {

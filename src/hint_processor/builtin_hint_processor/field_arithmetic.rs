@@ -2,12 +2,13 @@ use felt::Felt252;
 use num_bigint::{BigUint, ToBigInt};
 use num_integer::Integer;
 use num_traits::Zero;
+use rand::RngCore;
 
 use super::hint_utils::insert_value_from_var_name;
 use super::secp::bigint_utils::Uint384;
 use crate::math_utils::{is_quad_residue, mul_inv, sqrt_prime_power};
 use crate::serde::deserialize_program::ApTracking;
-use crate::stdlib::{collections::HashMap, prelude::*};
+use crate::stdlib::{cell::RefCell, collections::HashMap, prelude::*, rc::Rc};
 use crate::types::errors::math_errors::MathError;
 use crate::vm::errors::hint_errors::HintError;
 use crate::{
@@ -64,6 +65,7 @@ pub fn get_square_root(
     vm: &mut VirtualMachine,
     ids_data: &HashMap<String, HintReference>,
     ap_tracking: &ApTracking,
+    rng: Rc<RefCell<dyn RngCore>>,
 ) -> Result<(), HintError> {
     let generator = Uint384::from_var_name("generator", vm, ids_data, ap_tracking)?.pack();
     let x = Uint384::from_var_name("x", vm, ids_data, ap_tracking)?.pack();
@@ -71,7 +73,7 @@ pub fn get_square_root(
     let success_x = is_quad_residue(&x, &p)?;
 
     let root_x = if success_x {
-        sqrt_prime_power(&x, &p).unwrap_or_default()
+        sqrt_prime_power(&x, &p, rng.clone()).unwrap_or_default()
     } else {
         BigUint::zero()
     };
@@ -80,7 +82,7 @@ pub fn get_square_root(
     let success_gx = is_quad_residue(&gx, &p)?;
 
     let root_gx = if success_gx {
-        sqrt_prime_power(&gx, &p).unwrap_or_default()
+        sqrt_prime_power(&gx, &p, rng).unwrap_or_default()
     } else {
         BigUint::zero()
     };
