@@ -446,7 +446,7 @@ mod tests {
         let program: Program = deserialize_and_parse_program(reader, Some("main"))
             .expect("Failed to deserialize program");
 
-        let program_json = parse_program(program);
+        let program_json = parse_program(program.clone());
 
         let program_res =
             parse_program_json(program_json, Some("main")).expect("Failed to parse program");
