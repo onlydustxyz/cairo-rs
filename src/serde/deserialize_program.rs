@@ -48,7 +48,7 @@ impl BuiltinName {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ProgramJson {
     pub prime: String,
     pub builtins: Vec<BuiltinName>,
@@ -135,7 +135,7 @@ pub struct Location {
     pub start_col: u32,
 }
 
-#[derive(Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct DebugInfo {
     instruction_locations: HashMap<usize, InstructionLocation>,
 }
@@ -408,6 +408,23 @@ pub fn parse_program_json(
         constants,
         reference_manager: program_json.reference_manager,
     })
+}
+
+pub fn parse_program(program: Program) -> ProgramJson {
+    ProgramJson {
+        prime: program.prime().to_owned(),
+        builtins: program.builtins().to_vec(),
+        data: program.data().to_vec(),
+        identifiers: program.identifiers().to_owned(),
+        hints: program.hints().to_owned(),
+        reference_manager: program.reference_manager().to_owned(),
+        attributes: program.error_message_attributes().to_owned(),
+        debug_info: program
+            .instruction_locations()
+            .map(|instruction_locations| DebugInfo {
+                instruction_locations,
+            }),
+    }
 }
 
 #[cfg(test)]

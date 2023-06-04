@@ -1,4 +1,4 @@
-use crate::serde::deserialize_program::Reference;
+use crate::serde::deserialize_program::{parse_program, ProgramJson, Reference};
 use crate::stdlib::{collections::HashMap, prelude::*, sync::Arc};
 
 use crate::{
@@ -103,6 +103,11 @@ impl Program {
 
     pub fn from_bytes(bytes: &[u8], entrypoint: Option<&str>) -> Result<Program, ProgramError> {
         deserialize_and_parse_program(bytes, entrypoint)
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let program_json: ProgramJson = parse_program(self.clone());
+        serde_json::to_vec(&program_json).unwrap()
     }
 
     pub fn prime(&self) -> &str {
