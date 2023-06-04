@@ -421,6 +421,7 @@ pub fn parse_program(program: Program) -> ProgramJson {
         attributes: program.error_message_attributes().to_owned(),
         debug_info: program
             .instruction_locations()
+            .clone()
             .map(|instruction_locations| DebugInfo {
                 instruction_locations,
             }),
