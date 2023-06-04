@@ -439,6 +439,22 @@ mod tests {
 
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn serialization_works() {
+        let reader = include_bytes!("../../cairo_programs/manually_compiled/valid_program_a.json");
+
+        let program: Program = deserialize_and_parse_program(reader, Some("main"))
+            .expect("Failed to deserialize program");
+
+        let program_json = parse_program(program);
+
+        let program_res =
+            parse_program_json(program_json, Some("main")).expect("Failed to parse program");
+
+        assert_eq!(program, program_res);
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn deserialize_bigint_from_string_json_gives_error() {
         let invalid_even_length_hex_json = r#"
             {
