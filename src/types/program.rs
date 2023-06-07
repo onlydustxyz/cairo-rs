@@ -34,8 +34,8 @@ use std::path::Path;
 // exceptional circumstances, such as when reconstructing a backtrace on execution
 // failures.
 // Fields in `Program` (other than `SharedProgramData` itself) are used by the main logic.
-#[derive(Clone, Default, Debug, PartialEq, Eq)]
-pub(crate) struct SharedProgramData {
+#[derive(Clone, Default, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct SharedProgramData {
     pub(crate) builtins: Vec<BuiltinName>,
     pub(crate) data: Vec<MaybeRelocatable>,
     pub(crate) hints: HashMap<usize, Vec<HintParams>>,
@@ -48,11 +48,11 @@ pub(crate) struct SharedProgramData {
     pub(crate) identifiers: HashMap<String, Identifier>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Program {
-    pub(crate) shared_program_data: Arc<SharedProgramData>,
-    pub(crate) constants: HashMap<String, Felt252>,
-    pub(crate) reference_manager: ReferenceManager,
+    pub shared_program_data: Arc<SharedProgramData>,
+    pub constants: HashMap<String, Felt252>,
+    pub reference_manager: ReferenceManager,
 }
 
 impl Program {
