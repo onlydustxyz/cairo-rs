@@ -16,7 +16,7 @@ use crate::{
 };
 use felt::{Felt252, PRIME_STR};
 use num_traits::Num;
-use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer, Serialize};
+use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Number;
 
 // This enum is used to deserialize program builtins into &str and catch non-valid names
@@ -52,7 +52,10 @@ impl BuiltinName {
 pub struct ProgramJson {
     pub prime: String,
     pub builtins: Vec<BuiltinName>,
-    #[serde(deserialize_with = "deserialize_array_of_bigint_hex")]
+    #[serde(
+        deserialize_with = "deserialize_array_of_bigint_hex",
+        serialize_with = "serialize_program_data"
+    )]
     pub data: Vec<MaybeRelocatable>,
     pub identifiers: HashMap<String, Identifier>,
     pub hints: HashMap<usize, Vec<HintParams>>,
@@ -165,7 +168,7 @@ where
     Ok(Felt252::parse_bytes(n.to_string().as_bytes(), 10))
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
 pub struct ReferenceManager {
     pub references: Vec<Reference>,
 }
@@ -333,6 +336,22 @@ pub fn deserialize_value_address<'de, D: Deserializer<'de>>(
     d: D,
 ) -> Result<ValueAddress, D::Error> {
     d.deserialize_str(ValueAddressVisitor)
+}
+
+pub fn serialize_program_data<S: Serializer>(
+    v: &[MaybeRelocatable],
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    let v = v
+        .iter()
+        .map(|val| match val.clone() {
+            MaybeRelocatable::Int(value) => format!("0x{:x}", value.to_biguint()),
+            MaybeRelocatable::RelocatableValue(_) => {
+                panic!("Got unexpected relocatable value in program data")
+            }
+        })
+        .collect::<Vec<String>>();
+    v.serialize(serializer)
 }
 
 pub fn deserialize_program_json(reader: &[u8]) -> Result<ProgramJson, ProgramError> {
