@@ -50,9 +50,9 @@ pub struct SharedProgramData {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program {
-    pub(crate) shared_program_data: Arc<SharedProgramData>,
-    pub(crate) constants: HashMap<String, Felt252>,
-    pub(crate) reference_manager: ReferenceManager,
+    pub shared_program_data: Arc<SharedProgramData>,
+    pub constants: HashMap<String, Felt252>,
+    pub reference_manager: ReferenceManager,
 }
 
 impl Program {
