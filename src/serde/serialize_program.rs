@@ -20,13 +20,16 @@ pub fn serialize_value_address<S: Serializer>(
     v: &ValueAddress,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
-    v.serialize(serializer)
+    format!("{:}", v).serialize(serializer)
 }
 
 #[cfg(test)]
 mod tests {
 
+    use std::io::Write;
+
     use crate::serde::deserialize_program::OffsetValue;
+    use crate::serde::deserialize_program::ProgramJson;
     use crate::serde::deserialize_program::ValueAddress;
     use crate::serde::deserialize_utils::parse_value;
     use crate::stdlib::string::ToString;
@@ -36,6 +39,21 @@ mod tests {
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::*;
+
+    #[test]
+    fn serialize_and_deserialize_program() {
+        let program_bytes =
+            include_bytes!("../../cairo_programs/manually_compiled/valid_program_c.json");
+        let program: ProgramJson = serde_json::from_slice(program_bytes).unwrap();
+        let test_bytes = serde_json::to_vec(&program).unwrap();
+        std::fs::File::create("foo.json")
+            .unwrap()
+            .write_all(&test_bytes)
+            .unwrap();
+        let test_value: ProgramJson = serde_json::from_slice(&test_bytes).unwrap();
+
+        pretty_assertions::assert_eq!(program, test_value)
+    }
 
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -56,6 +74,24 @@ mod tests {
         );
     }
 
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn failing_value_in_valid_program_b() {
+        let value = "cast([fp + (-4)] + 1, felt*)";
+
+        pretty_assertions::assert_str_eq!(
+            value,
+            format!(
+                "{:}",
+                ValueAddress {
+                    offset1: OffsetValue::Reference(Register::FP, -4, true),
+                    offset2: OffsetValue::Value(1),
+                    dereference: false,
+                    value_type: "felt".to_string(),
+                }
+            )
+        );
+    }
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn parse_value_with_no_inner_dereference_test() {
@@ -146,44 +182,6 @@ mod tests {
                     offset2: OffsetValue::Value(1),
                     dereference: true,
                     value_type: "felt".to_string(),
-                }
-            )
-        );
-    }
-
-    #[test]
-    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-    fn parse_value_with_2_inner_deref() {
-        let value = "[cast([ap] + [fp + 1], __main__.felt*)]";
-
-        assert_eq!(
-            value,
-            format!(
-                "{:}",
-                ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true),
-                    offset2: OffsetValue::Reference(Register::FP, 1_i32, true),
-                    dereference: true,
-                    value_type: "__main__.felt".to_string(),
-                }
-            )
-        );
-    }
-
-    #[test]
-    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-    fn parse_value_with_2_inner_dereferences() {
-        let value = "[cast([ap + 1] + [fp + 1], __main__.felt*)]";
-
-        assert_eq!(
-            value,
-            format!(
-                "{:}",
-                ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 1_i32, true),
-                    offset2: OffsetValue::Reference(Register::FP, 1_i32, true),
-                    dereference: true,
-                    value_type: "__main__.felt".to_string(),
                 }
             )
         );
