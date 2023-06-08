@@ -36,7 +36,9 @@ mod stdlib {
             boxed::Box,
             clone::Clone,
             cmp::{Eq, PartialEq, Reverse},
+            fmt,
             iter::IntoIterator,
+            str::FromStr,
             string::{String, ToString},
             vec::Vec,
         };

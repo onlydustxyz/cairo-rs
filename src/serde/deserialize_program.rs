@@ -1,7 +1,7 @@
 use crate::stdlib::{collections::HashMap, fmt, prelude::*, sync::Arc};
 
 use crate::{
-    serde::deserialize_utils,
+    serde::{deserialize_utils, serialize_program::number_from_felt},
     types::{
         errors::program_errors::ProgramError,
         instruction::Register,
@@ -15,7 +15,7 @@ use crate::{
     },
 };
 use felt::{Felt252, PRIME_STR};
-use num_traits::Num;
+use num_traits::{Num, Zero};
 use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Number;
 
@@ -101,15 +101,25 @@ impl Default for ApTracking {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Identifier {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pc: Option<usize>,
-    #[serde(rename(deserialize = "type"))]
+    #[serde(
+        rename(deserialize = "type", serialize = "type"),
+        skip_serializing_if = "Option::is_none"
+    )]
     pub type_: Option<String>,
     #[serde(default)]
-    #[serde(deserialize_with = "felt_from_number")]
+    #[serde(
+        deserialize_with = "felt_from_number",
+        serialize_with = "number_from_felt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub value: Option<Felt252>,
-
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub full_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub members: Option<HashMap<String, Member>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cairo_type: Option<String>,
 }
 
@@ -189,6 +199,48 @@ pub enum OffsetValue {
     Reference(Register, i32, bool),
 }
 
+impl fmt::Display for OffsetValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let val = match self {
+            OffsetValue::Immediate(felt) => match felt {
+                felt if felt == &Felt252::zero() => String::default(),
+                felt if felt > &Felt252::zero() => format!("{:}", felt),
+                _ => format!("({:})", felt),
+            },
+            OffsetValue::Value(value) => match value {
+                0 => String::default(),
+                1.. => format!("{:}", value),
+                _ => format!("({:})", value),
+            },
+            OffsetValue::Reference(register, off, brackets) => {
+                //
+                let register = match register {
+                    Register::AP => "ap".to_string(),
+                    Register::FP => "fp".to_string(),
+                };
+                let offset = match off {
+                    0 => {
+                        if *brackets {
+                            String::default()
+                        } else {
+                            format!(" - {:}", off)
+                        }
+                    }
+                    1.. => format!(" + {:}", off),
+                    _ => format!(" + ({:})", off),
+                };
+
+                if *brackets {
+                    format!("[{register:}{offset:}]")
+                } else {
+                    format!("{register:}{offset:}")
+                }
+            }
+        };
+        write!(f, "{}", val)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 
 pub struct ValueAddress {
@@ -196,6 +248,28 @@ pub struct ValueAddress {
     pub offset2: OffsetValue,
     pub dereference: bool,
     pub value_type: String,
+}
+
+impl fmt::Display for ValueAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let offset1 = format!("{:}", self.offset1);
+        let offset2 = format!("{:}", self.offset2);
+        let mut res = format!("cast({offset1:}");
+        if !offset2.is_empty() {
+            res = format!("{res:} + ");
+        }
+
+        res = format!("{res:}{offset2:}, {:}", self.value_type);
+        // if let OffsetValue::Value(_) = self.offset2 {
+        //     res = format!("{res:}*");
+        // }
+        if self.dereference {
+            res = format!("[{res:}*)]");
+        } else {
+            res = format!("{res:})")
+        }
+        write!(f, "{}", res)
+    }
 }
 
 impl ValueAddress {
@@ -452,10 +526,68 @@ mod tests {
     use super::*;
     use assert_matches::assert_matches;
     use felt::felt_str;
-    use num_traits::Zero;
+    use num_traits::{One, Zero};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::*;
+
+    #[test]
+    fn test_offset_value_display() {
+        assert_eq!("", format!("{:}", OffsetValue::Immediate(Felt252::zero())));
+        assert_eq!("", format!("{:}", OffsetValue::Value(0)));
+        assert_eq!("1", format!("{:}", OffsetValue::Immediate(Felt252::one())));
+        assert_eq!("-2", format!("{:}", OffsetValue::Value(-2)));
+        assert_eq!("2", format!("{:}", OffsetValue::Value(2)));
+        assert_eq!(
+            "[ap]",
+            format!("{:}", OffsetValue::Reference(Register::AP, 0, true))
+        );
+        assert_eq!(
+            "[ap + 2]",
+            format!("{:}", OffsetValue::Reference(Register::AP, 2, true))
+        );
+        assert_eq!(
+            "[ap + (-2)]",
+            format!("{:}", OffsetValue::Reference(Register::AP, -2, true))
+        );
+        assert_eq!(
+            "ap",
+            format!("{:}", OffsetValue::Reference(Register::AP, 0, false))
+        );
+        assert_eq!(
+            "ap + 1",
+            format!("{:}", OffsetValue::Reference(Register::AP, 1, false))
+        );
+        assert_eq!(
+            "ap + (-1)",
+            format!("{:}", OffsetValue::Reference(Register::AP, -1, false))
+        );
+
+        assert_eq!(
+            "[fp]",
+            format!("{:}", OffsetValue::Reference(Register::FP, 0, true))
+        );
+        assert_eq!(
+            "[fp + 2]",
+            format!("{:}", OffsetValue::Reference(Register::FP, 2, true))
+        );
+        assert_eq!(
+            "[fp + (-2)]",
+            format!("{:}", OffsetValue::Reference(Register::FP, -2, true))
+        );
+        assert_eq!(
+            "fp",
+            format!("{:}", OffsetValue::Reference(Register::FP, 0, false))
+        );
+        assert_eq!(
+            "fp + 1",
+            format!("{:}", OffsetValue::Reference(Register::FP, 1, false))
+        );
+        assert_eq!(
+            "fp + (-1)",
+            format!("{:}", OffsetValue::Reference(Register::FP, -1, false))
+        );
+    }
 
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
