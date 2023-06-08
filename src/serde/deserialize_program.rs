@@ -19,6 +19,8 @@ use num_traits::{Num, Zero};
 use serde::{de, de::MapAccess, de::SeqAccess, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Number;
 
+use super::serialize_program::serialize_value_address;
+
 // This enum is used to deserialize program builtins into &str and catch non-valid names
 #[derive(Serialize, Deserialize, Debug, PartialEq, Copy, Clone, Eq, Hash)]
 #[allow(non_camel_case_types)]
@@ -48,7 +50,7 @@ impl BuiltinName {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct ProgramJson {
     pub prime: String,
     pub builtins: Vec<BuiltinName>,
@@ -187,8 +189,11 @@ pub struct ReferenceManager {
 pub struct Reference {
     pub ap_tracking_data: ApTracking,
     pub pc: Option<usize>,
-    #[serde(deserialize_with = "deserialize_value_address")]
-    #[serde(rename(deserialize = "value"))]
+    #[serde(
+        deserialize_with = "deserialize_value_address",
+        serialize_with = "serialize_value_address"
+    )]
+    #[serde(rename(deserialize = "value", serialize = "value"))]
     pub value_address: ValueAddress,
 }
 
@@ -260,14 +265,19 @@ impl fmt::Display for ValueAddress {
         }
 
         res = format!("{res:}{offset2:}, {:}", self.value_type);
-        // if let OffsetValue::Value(_) = self.offset2 {
-        //     res = format!("{res:}*");
-        // }
-        if self.dereference {
-            res = format!("[{res:}*)]");
-        } else {
-            res = format!("{res:})")
+        if let OffsetValue::Value(_) = self.offset2 {
+            res = format!("{res:}*");
         }
+        res = format!("{res:})");
+        if self.dereference {
+            res = format!("[{res:}]")
+        }
+        // if self.dereference {
+        //     res = format!("[{res:}*)]");
+        // }
+        // else {
+        //     res = format!("{res:})")
+        // }
         write!(f, "{}", res)
     }
 }
