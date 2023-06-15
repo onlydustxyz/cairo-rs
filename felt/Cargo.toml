@@ -1,18 +1,23 @@
 [package]
 name = "cairo-felt"
-version = "0.1.0"
+version = "0.3.0-rc1"
 edition = "2021"
-license = "MIT"
+license = "Apache-2.0"
 description = "Field elements representation for the Cairo VM"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["std"]
+std = []
+alloc = []
 
 [dependencies]
-num-integer = "0.1.45"
-num-bigint = { version = "0.4", features = ["serde"] }
-num-traits = "0.2.15"
-lazy_static = "1.4.0"
-serde = { version = "1.0", features = ["derive"] }
+num-integer = { version = "0.1.45", default-features = false }
+num-bigint = { version = "0.4", features = ["serde"], default-features = false }
+num-traits = { version = "0.2.15", default-features = false }
+lazy_static = { version = "1.4.0", default-features = false, features = [
+    "spin_no_std",
+] }
+serde = { version = "1.0", features = ["derive"], default-features = false }
 
 [dev-dependencies]
 proptest = "1.0.0"

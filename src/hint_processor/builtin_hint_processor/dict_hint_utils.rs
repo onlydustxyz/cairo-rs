@@ -1,8 +1,9 @@
+use crate::stdlib::{any::Any, cell::RefCell, collections::HashMap, prelude::*, rc::Rc};
+
 use crate::{
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
-use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     any_box,
@@ -111,7 +112,7 @@ pub fn dict_read(
     let dict_ptr = get_ptr_from_var_name("dict_ptr", vm, ids_data, ap_tracking)?;
     let dict_manager_ref = exec_scopes.get_dict_manager()?;
     let mut dict = dict_manager_ref.borrow_mut();
-    let tracker = dict.get_tracker_mut(&dict_ptr)?;
+    let tracker = dict.get_tracker_mut(dict_ptr)?;
     tracker.current_ptr.offset += DICT_ACCESS_SIZE;
     let value = tracker.get_value(&key)?;
     insert_value_from_var_name("value", value.clone(), vm, ids_data, ap_tracking)
@@ -135,10 +136,10 @@ pub fn dict_write(
     //Get tracker for dictionary
     let dict_manager_ref = exec_scopes.get_dict_manager()?;
     let mut dict = dict_manager_ref.borrow_mut();
-    let tracker = dict.get_tracker_mut(&dict_ptr)?;
+    let tracker = dict.get_tracker_mut(dict_ptr)?;
     //dict_ptr is a pointer to a struct, with the ordered fields (key, prev_value, new_value),
     //dict_ptr.prev_value will be equal to dict_ptr + 1
-    let dict_ptr_prev_value = dict_ptr + 1_i32;
+    let dict_ptr_prev_value = (dict_ptr + 1_i32)?;
     //Tracker set to track next dictionary entry
     tracker.current_ptr.offset += DICT_ACCESS_SIZE;
     //Get previous value
@@ -147,7 +148,7 @@ pub fn dict_write(
     tracker.insert_value(&key, &new_value);
     //Insert previous value into dict_ptr.prev_value
     //Addres for dict_ptr.prev_value should be dict_ptr* + 1 (defined above)
-    vm.insert_value(&dict_ptr_prev_value, prev_value)?;
+    vm.insert_value(dict_ptr_prev_value, prev_value)?;
     Ok(())
 }
 
@@ -176,7 +177,7 @@ pub fn dict_update(
     //Get tracker for dictionary
     let dict_manager_ref = exec_scopes.get_dict_manager()?;
     let mut dict = dict_manager_ref.borrow_mut();
-    let tracker = dict.get_tracker_mut(&dict_ptr)?;
+    let tracker = dict.get_tracker_mut(dict_ptr)?;
     //Check that prev_value is equal to the current value at the given key
     let current_value = tracker.get_value(&key)?;
     if current_value != &prev_value {
@@ -213,7 +214,7 @@ pub fn dict_squash_copy_dict(
     let dict_manager = dict_manager_ref.borrow();
     let dict_copy: Box<dyn Any> = Box::new(
         dict_manager
-            .get_tracker(&dict_accesses_end)?
+            .get_tracker(dict_accesses_end)?
             .get_dictionary_copy(),
     );
     exec_scopes.enter_scope(HashMap::from([
@@ -243,7 +244,7 @@ pub fn dict_squash_update_ptr(
     exec_scopes
         .get_dict_manager()?
         .borrow_mut()
-        .get_tracker_mut(&squashed_dict_start)?
+        .get_tracker_mut(squashed_dict_start)?
         .current_ptr = squashed_dict_end;
     Ok(())
 }
@@ -257,9 +258,9 @@ mod tests {
     use crate::hint_processor::builtin_hint_processor::dict_manager::Dictionary;
     use crate::hint_processor::builtin_hint_processor::hint_code;
     use crate::hint_processor::hint_processor_definition::HintProcessor;
+    use crate::stdlib::collections::HashMap;
     use crate::types::exec_scope::ExecutionScopes;
-    use crate::vm::errors::vm_errors::VirtualMachineError;
-    use crate::vm::vm_memory::memory::Memory;
+
     use crate::{
         hint_processor::builtin_hint_processor::dict_manager::{DictManager, DictTracker},
         relocatable,
@@ -267,9 +268,13 @@ mod tests {
         utils::test_utils::*,
         vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     };
-    use std::collections::HashMap;
+    use assert_matches::assert_matches;
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_new_with_initial_dict_empty() {
         let hint_code = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict";
         let mut vm = vm!();
@@ -284,9 +289,9 @@ mod tests {
         run_hint!(vm, HashMap::new(), hint_code, &mut exec_scopes)
             .expect("Error while executing hint");
         //first new segment is added for the dictionary
-        assert_eq!(vm.segments.num_segments, 2);
+        assert_eq!(vm.segments.num_segments(), 2);
         //new segment base (1,0) is inserted into ap (1,0)
-        check_memory![vm.memory, ((1, 0), (1, 0))];
+        check_memory![vm.segments.memory, ((1, 0), (1, 0))];
         //Check the dict manager has a tracker for segment 0,
         //and that tracker contains the ptr (1,0) and an empty dict
         assert_eq!(
@@ -296,22 +301,24 @@ mod tests {
                 .borrow()
                 .trackers
                 .get(&1),
-            Some(&DictTracker::new_empty(&relocatable!(1, 0)))
+            Some(&DictTracker::new_empty(relocatable!(1, 0)))
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_new_with_no_initial_dict() {
         let hint_code = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict";
         let mut vm = vm!();
         //ids and references are not needed for this test
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, HashMap::new(), hint_code),
             Err(HintError::NoInitialDict)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_new_ap_is_taken() {
         let hint_code = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict";
         let mut vm = vm!();
@@ -319,39 +326,43 @@ mod tests {
             "initial_dict",
             HashMap::<MaybeRelocatable, MaybeRelocatable>::new()
         )];
-        vm.memory = memory![((1, 0), 1)];
+        vm.segments = segments![((1, 0), 1)];
         //ids and references are not needed for this test
-        assert_eq!(
-            run_hint!(vm, HashMap::new(), hint_code, &mut exec_scopes),
-            Err(HintError::Internal(VirtualMachineError::MemoryError(
-                MemoryError::InconsistentMemory(
-                    MaybeRelocatable::from((1, 0)),
-                    MaybeRelocatable::from(1),
-                    MaybeRelocatable::from((0, 0))
-                )
-            )))
-        );
+        assert_matches!(
+                    run_hint!(vm, HashMap::new(), hint_code, &mut exec_scopes),
+                    Err(HintError::Memory(
+                        MemoryError::InconsistentMemory(
+                            x,
+                            y,
+                            z
+                        )
+                    )) if x ==
+        Relocatable::from((1, 0)) &&
+                            y == MaybeRelocatable::from(1) &&
+                            z == MaybeRelocatable::from((2, 0))
+                );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_read_valid() {
         let hint_code = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.value = dict_tracker.data[ids.key]";
         let mut vm = vm!();
         //Initialize fp
         vm.run_context.fp = 3;
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 2), (2, 0))];
         let ids_data = ids_data!["key", "value", "dict_ptr"];
         add_segments!(vm, 1);
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(&mut exec_scopes, 2, (5, 12));
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that value variable (at address (1,1)) contains the proper value
         assert_eq!(
-            vm.memory
+            vm.segments
+                .memory
                 .get(&MaybeRelocatable::from((1, 1)))
-                .unwrap()
                 .unwrap()
                 .as_ref(),
             &MaybeRelocatable::from(12)
@@ -361,23 +372,25 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_read_invalid_key() {
         let hint_code = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.value = dict_tracker.data[ids.key]";
         let mut vm = vm!();
         //Initialize fp
         vm.run_context.fp = 3;
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 6), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 6), ((1, 2), (2, 0))];
         let ids_data = ids_data!["key", "value", "dict_ptr"];
         //Execute the hint
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(&mut exec_scopes, 2, (5, 12));
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
-            Err(HintError::NoValueForKey(MaybeRelocatable::from(6)))
+            Err(HintError::NoValueForKey(x)) if x == MaybeRelocatable::from(6)
         );
     }
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_read_no_tracker() {
         let hint_code = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.value = dict_tracker.data[ids.key]";
         let mut vm = vm!();
@@ -387,41 +400,42 @@ mod tests {
         let mut exec_scopes = scope![("dict_manager", Rc::new(RefCell::new(DictManager::new())))];
 
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 6), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 6), ((1, 2), (2, 0))];
         add_segments!(vm, 1);
         let ids_data = ids_data!["key", "value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
             Err(HintError::NoDictTracker(2))
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_default_dict_new_valid() {
         let hint_code = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)";
         let mut vm = vm!();
         run_context!(vm, 0, 1, 1);
         //insert ids.default_value into memory
-        vm.memory = memory![((1, 0), 17)];
+        vm.segments = segments![((1, 0), 17)];
         let ids_data = ids_data!["default_value"];
         let mut exec_scopes = ExecutionScopes::new();
         run_hint!(vm, ids_data, hint_code, &mut exec_scopes).expect("Error while executing hint");
         //third new segment is added for the dictionary
-        assert_eq!(vm.memory.data.len(), 3);
-        //new segment base (0,0) is inserted into ap (0,0)
-        check_memory![vm.memory, ((1, 1), (0, 0))];
-        //Check the dict manager has a tracker for segment 0,
-        //and that tracker contains the ptr (0,0) and an empty dict
+        assert_eq!(vm.segments.memory.data.len(), 3);
+        //new segment base (2,0) is inserted into ap (0,0)
+        check_memory![vm.segments.memory, ((1, 1), (2, 0))];
+        //Check the dict manager has a tracker for segment 2,
+        //and that tracker contains the ptr (2,0) and an empty dict
         assert_eq!(
             exec_scopes
                 .get_dict_manager()
                 .unwrap()
                 .borrow()
                 .trackers
-                .get(&0),
+                .get(&2),
             Some(&DictTracker::new_default_dict(
-                &relocatable!(0, 0),
+                relocatable!(2, 0),
                 &MaybeRelocatable::from(17),
                 None
             ))
@@ -429,19 +443,21 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_default_dict_new_no_default_value() {
         let hint_code = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_default_dict(segments, ids.default_value)";
         let mut vm = vm!();
         //Initialize fp
         vm.run_context.fp = 1;
         let ids_data = ids_data!["default_value"];
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code),
-            Err(HintError::FailedToGetIds)
+            Err(HintError::UnknownIdentifier(x)) if x == "default_value"
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_write_default_valid_empty_dict() {
         let hint_code = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.dict_ptr.prev_value = dict_tracker.data[ids.key]\ndict_tracker.data[ids.key] = ids.new_value";
         let mut vm = vm!();
@@ -450,7 +466,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager_default!(&mut exec_scopes, 2, 2);
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
         add_segments!(vm, 1);
         //ids.value (at (1, 0))
         //ids.dict_ptr (2, 0):
@@ -459,16 +475,17 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 17)
         check_dictionary![exec_scopes, 2, (5, 17)];
         //Check that the tracker's current_ptr has moved accordingly
         check_dict_ptr!(exec_scopes, 2, (2, 3));
         //Check the value of dict_ptr.prev_value, should be equal to the default_value (2)
-        check_memory![vm.memory, ((2, 1), 2)];
+        check_memory![vm.segments.memory, ((2, 1), 2)];
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_write_default_valid_overwrite_value() {
         let hint_code = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.dict_ptr.prev_value = dict_tracker.data[ids.key]\ndict_tracker.data[ids.key] = ids.new_value";
         let mut vm = vm!();
@@ -477,7 +494,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager_default!(exec_scopes, 2, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
         add_segments!(vm, 1);
         //ids.value (at (1, 0))
         //ids.dict_ptr (2, 0):
@@ -486,16 +503,17 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 17)
         check_dictionary![exec_scopes, 2, (5, 17)];
         //Check that the tracker's current_ptr has moved accordingly
         check_dict_ptr!(exec_scopes, 2, (2, 3));
         //Check the value of dict_ptr.prev_value, should be equal to the previously inserted value (10)
-        check_memory![vm.memory, ((2, 1), 10)];
+        check_memory![vm.segments.memory, ((2, 1), 10)];
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_write_simple_valid_overwrite_value() {
         let hint_code = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.dict_ptr.prev_value = dict_tracker.data[ids.key]\ndict_tracker.data[ids.key] = ids.new_value";
         let mut vm = vm!();
@@ -504,7 +522,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
         add_segments!(vm, 1);
         //ids.value (at (2, 0))
         //ids.dict_ptr (2, 0):
@@ -513,17 +531,18 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 17)
         check_dictionary![exec_scopes, 2, (5, 17)];
         //Check that the tracker's current_ptr has moved accordingly
         check_dict_ptr!(exec_scopes, 2, (2, 3));
         check_dict_ptr!(exec_scopes, 2, (2, 3));
         //Check the value of dict_ptr.prev_value, should be equal to the previously inserted value (10)
-        check_memory![vm.memory, ((2, 1), 10)];
+        check_memory![vm.segments.memory, ((2, 1), 10)];
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_write_simple_valid_cant_write_new_key() {
         let hint_code = "dict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ndict_tracker.current_ptr += ids.DictAccess.SIZE\nids.dict_ptr.prev_value = dict_tracker.data[ids.key]\ndict_tracker.data[ids.key] = ids.new_value";
         let mut vm = vm!();
@@ -532,7 +551,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2);
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 17), ((1, 2), (2, 0))];
         add_segments!(vm, 1);
         //ids.value (at (1, 0))
         //ids.dict_ptr (2, 0):
@@ -541,13 +560,14 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
-            Err(HintError::NoValueForKey(MaybeRelocatable::from(5)))
+            Err(HintError::NoValueForKey(x)) if x == MaybeRelocatable::from(5)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_simple_valid() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -556,7 +576,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 10), ((1, 2), 20), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 10), ((1, 2), 20), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -564,7 +584,7 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 20)
         check_dictionary![exec_scopes, 2, (5, 20)];
         //Check that the tracker's current_ptr has moved accordingly
@@ -572,6 +592,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_simple_valid_no_change() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -580,7 +601,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -588,7 +609,7 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 20)
         check_dictionary![exec_scopes, 2, (5, 10)];
         //Check that the tracker's current_ptr has moved accordingly
@@ -596,6 +617,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_simple_invalid_wrong_prev_key() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -604,7 +626,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 11), ((1, 2), 20), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 11), ((1, 2), 20), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -612,17 +634,20 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
             Err(HintError::WrongPrevValue(
-                MaybeRelocatable::from(11),
-                MaybeRelocatable::from(10),
-                MaybeRelocatable::from(5)
-            ))
+                x,
+                y,
+                z
+            )) if x == MaybeRelocatable::from(11) &&
+                    y == MaybeRelocatable::from(10) &&
+                    z == MaybeRelocatable::from(5)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_simple_invalid_wrong_key() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -631,7 +656,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 6), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 6), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -639,13 +664,14 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
-            Err(HintError::NoValueForKey(MaybeRelocatable::from(6)))
+            Err(HintError::NoValueForKey(x)) if x == MaybeRelocatable::from(6)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_default_valid() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -654,7 +680,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 10), ((1, 2), 20), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 10), ((1, 2), 20), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -662,7 +688,7 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 20)
         check_dictionary![exec_scopes, 2, (5, 20)];
         //Check that the tracker's current_ptr has moved accordingly
@@ -670,6 +696,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_default_valid_no_change() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -678,7 +705,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -686,7 +713,7 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 10)
         check_dictionary![exec_scopes, 2, (5, 10)];
         //Check that the tracker's current_ptr has moved accordingly
@@ -694,6 +721,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_default_invalid_wrong_prev_key() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -702,7 +730,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 11), ((1, 2), 10), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 11), ((1, 2), 10), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -710,17 +738,20 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
             Err(HintError::WrongPrevValue(
-                MaybeRelocatable::from(11),
-                MaybeRelocatable::from(10),
-                MaybeRelocatable::from(5)
-            ))
+                x,
+                y,
+                z
+            )) if x == MaybeRelocatable::from(11) &&
+                    y == MaybeRelocatable::from(10) &&
+                    z == MaybeRelocatable::from(5)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_default_invalid_wrong_key() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -729,7 +760,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager_default!(exec_scopes, 2, 17, (5, 10));
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 6), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 6), ((1, 1), 10), ((1, 2), 10), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -737,17 +768,20 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
             Err(HintError::WrongPrevValue(
-                MaybeRelocatable::from(10),
-                MaybeRelocatable::from(17),
-                MaybeRelocatable::from(6)
-            ))
+                x,
+                y,
+                z
+            )) if x == MaybeRelocatable::from(10) &&
+                    y == MaybeRelocatable::from(17) &&
+                    z == MaybeRelocatable::from(6)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_update_default_valid_no_key_prev_value_equals_default() {
         let hint_code = "# Verify dict pointer and prev value.\ndict_tracker = __dict_manager.get_tracker(ids.dict_ptr)\ncurrent_value = dict_tracker.data[ids.key]\nassert current_value == ids.prev_value, \\\n    f'Wrong previous value in dict. Got {ids.prev_value}, expected {current_value}.'\n\n# Update value.\ndict_tracker.data[ids.key] = ids.new_value\ndict_tracker.current_ptr += ids.DictAccess.SIZE";
         let mut vm = vm!();
@@ -756,7 +790,7 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager_default!(exec_scopes, 2, 17);
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), 17), ((1, 2), 20), ((1, 3), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), 17), ((1, 2), 20), ((1, 3), (2, 0))];
         add_segments!(vm, 1);
         //ids.dict_ptr (2, 0):
         //  dict_ptr.key = (2, 1)
@@ -764,7 +798,7 @@ mod tests {
         //  dict_ptr.new_value = (2, 3)
         let ids_data = ids_data!["key", "prev_value", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that the dictionary was updated with the new key-value pair (5, 20)
         check_dictionary![exec_scopes, 2, (5, 20)];
         //Check that the tracker's current_ptr has moved accordingly
@@ -772,19 +806,20 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_squash_copy_dict_valid_empty_dict() {
         let hint_code = "# Prepare arguments for dict_new. In particular, the same dictionary values should be copied\n# to the new (squashed) dictionary.\nvm_enter_scope({\n    # Make __dict_manager accessible.\n    '__dict_manager': __dict_manager,\n    # Create a copy of the dict, in case it changes in the future.\n    'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),\n})";
         let mut vm = vm!();
         //Initialize fp
         vm.run_context.fp = 1;
         //ids.dict_access
-        vm.memory = memory![((1, 0), (2, 0))];
+        vm.segments = segments![((1, 0), (2, 0))];
         add_segments!(vm, 1);
         let ids_data = ids_data!["dict_accesses_end"];
         //Execute the hint
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2);
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that a new exec scope has been created
         assert_eq!(exec_scopes.data.len(), 2);
         //Check that this scope contains the expected initial-dict
@@ -800,18 +835,19 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_squash_copy_dict_valid_non_empty_dict() {
         let hint_code = "# Prepare arguments for dict_new. In particular, the same dictionary values should be copied\n# to the new (squashed) dictionary.\nvm_enter_scope({\n    # Make __dict_manager accessible.\n    '__dict_manager': __dict_manager,\n    # Create a copy of the dict, in case it changes in the future.\n    'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),\n})";
         let mut vm = vm!();
         //Initialize fp
         vm.run_context.fp = 1;
-        vm.memory = memory![((1, 0), (2, 0))];
+        vm.segments = segments![((1, 0), (2, 0))];
         add_segments!(vm, 1);
         let ids_data = ids_data!["dict_accesses_end"];
         //Execute the hint
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (1, 2), (3, 4), (5, 6));
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check that a new exec scope has been created
         assert_eq!(exec_scopes.data.len(), 2);
         //Check that this scope contains the expected initial-dict
@@ -831,6 +867,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_squash_copy_dict_invalid_no_dict() {
         let hint_code = "# Prepare arguments for dict_new. In particular, the same dictionary values should be copied\n# to the new (squashed) dictionary.\nvm_enter_scope({\n    # Make __dict_manager accessible.\n    '__dict_manager': __dict_manager,\n    # Create a copy of the dict, in case it changes in the future.\n    'initial_dict': dict(__dict_manager.get_dict(ids.dict_accesses_end)),\n})";
         let mut vm = vm!();
@@ -840,17 +877,18 @@ mod tests {
         let dict_manager = DictManager::new();
         let mut exec_scopes = scope![("dict_manager", Rc::new(RefCell::new(dict_manager)))];
 
-        vm.memory = memory![((1, 0), (2, 0))];
+        vm.segments = segments![((1, 0), (2, 0))];
         add_segments!(vm, 1);
         let ids_data = ids_data!["dict_accesses_end"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
             Err(HintError::NoDictTracker(2))
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_squash_update_ptr_no_tracker() {
         let hint_code = "# Update the DictTracker's current_ptr to point to the end of the squashed dict.\n__dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = \\\n    ids.squashed_dict_end.address_";
         let mut vm = vm!();
@@ -859,18 +897,19 @@ mod tests {
         //Create manager
         let dict_manager = DictManager::new();
         let mut exec_scopes = scope![("dict_manager", Rc::new(RefCell::new(dict_manager)))];
-        vm.memory = memory![((1, 0), (2, 0)), ((1, 1), (2, 3))];
+        vm.segments = segments![((1, 0), (2, 0)), ((1, 1), (2, 3))];
         add_segments!(vm, 1);
         //Create ids
         let ids_data = ids_data!["squashed_dict_start", "squashed_dict_end"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
             Err(HintError::NoDictTracker(2))
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_squash_update_ptr_valid() {
         let hint_code = "# Update the DictTracker's current_ptr to point to the end of the squashed dict.\n__dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = \\\n    ids.squashed_dict_end.address_";
         let mut vm = vm!();
@@ -879,17 +918,18 @@ mod tests {
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager![exec_scopes, 2, (1, 2)];
         //ids.squash_dict_start
-        vm.memory = memory![((1, 0), (2, 0)), ((1, 1), (2, 3))];
+        vm.segments = segments![((1, 0), (2, 0)), ((1, 1), (2, 3))];
         add_segments!(vm, 1);
         //Create ids
         let ids_data = ids_data!["squashed_dict_start", "squashed_dict_end"];
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code, &mut exec_scopes), Ok(()));
         //Check the updated pointer
         check_dict_ptr!(exec_scopes, 2, (2, 3));
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_squash_update_ptr_mismatched_dict_ptr() {
         let hint_code = "# Update the DictTracker's current_ptr to point to the end of the squashed dict.\n__dict_manager.get_tracker(ids.squashed_dict_start).current_ptr = \\\n    ids.squashed_dict_end.address_";
         let mut vm = vm!();
@@ -897,21 +937,22 @@ mod tests {
         vm.run_context.fp = 2;
         let mut exec_scopes = ExecutionScopes::new();
         dict_manager!(exec_scopes, 2, (1, 2));
-        vm.memory = memory![((1, 0), (2, 3)), ((1, 1), (2, 6))];
+        vm.segments = segments![((1, 0), (2, 3)), ((1, 1), (2, 6))];
         add_segments!(vm, 1);
         //Create ids
         let ids_data = ids_data!["squashed_dict_start", "squashed_dict_end"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code, &mut exec_scopes),
             Err(HintError::MismatchedDictPtr(
-                relocatable!(2, 0),
-                relocatable!(2, 3)
-            ))
+                x,
+                y
+            )) if x == relocatable!(2, 0) && y == relocatable!(2, 3)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_dict_write_valid_relocatable_new_value() {
         let mut vm = vm!();
         //Initialize fp
@@ -920,12 +961,12 @@ mod tests {
         dict_manager_default!(&mut exec_scopes, 2, 2);
         // First we run dict_write hint
         //Insert ids into memory
-        vm.memory = memory![((1, 0), 5), ((1, 1), (1, 7)), ((1, 2), (2, 0))];
+        vm.segments = segments![((1, 0), 5), ((1, 1), (1, 7)), ((1, 2), (2, 0))];
         add_segments!(vm, 1);
         // new_value here is (1,7)
         let ids_data = ids_data!["key", "new_value", "dict_ptr"];
         //Execute the hint
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, hint_code::DICT_WRITE, &mut exec_scopes),
             Ok(())
         );

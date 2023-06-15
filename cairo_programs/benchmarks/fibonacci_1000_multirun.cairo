@@ -1,17 +1,6 @@
 func main() {
-    fib_wrapper(50);
-    ret;
-}
+    fib(1, 1, 1500000);
 
-func fib_wrapper(n) {
-    // Call fib(1, 1, 1000).
-    let result: felt = fib(1, 1, 1000);
-
-    // Make sure the 1000th Fibonacci number is 222450955505511890955301767713383614666194461405743219770606958667979327682.
-    assert result = 222450955505511890955301767713383614666194461405743219770606958667979327682;
-    if (n != 0) {
-        fib_wrapper(n - 1);
-    }
     ret;
 }
 

@@ -18,14 +18,15 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    - name: Install test dependencies
-      run: |
-        pip install ecdsa fastecdsa sympy cairo-lang
-        sudo apt update
-        sudo apt install -y valgrind
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
       with:
         ref: ${{ github.event.pull_request.base.sha }}
+    - name: Install test dependencies
+      run: |
+        pip install -r requirements.txt
+        sudo apt update
+        sudo apt install -y valgrind
     - name: Initialize IAI cache for ${{ github.event.pull_request.base.sha }}
       uses: actions/cache@v3
       id: cache-iai-results
@@ -53,12 +54,13 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
+    - name: Checkout
+      uses: actions/checkout@v3
     - name: Install test dependencies
       run: |
-        pip install ecdsa fastecdsa sympy cairo-lang
+        pip install -r requirements.txt
         sudo apt update
         sudo apt install -y valgrind
-    - uses: actions/checkout@v3
     - name: Initialize IAI cache for ${{ github.event.pull_request.base.sha }}
       uses: actions/cache@v3
       id: cache-iai-results

@@ -1,15 +1,26 @@
 [package]
-name = "parse-hyperlinks"
-version = "0.23.4"
-authors = ["Jens Getreu <getreu@getreu@web.de>"]
+name = "cairo-take_until_unbalanced"
+version = "0.24.2-rc1"
+authors = [
+    "Jens Getreu <getreu@getreu@web.de>",
+    "LambdaClass <hello@lambdaclass.com>",
+]
 edition = "2021"
-keywords = ["parser", "markup", "hyperlink", "Markdown", "reStructuredText"]
+keywords = ["parser"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
-repository = "https://gitlab.com/getreu/parse-hyperlinks"
-homepage = "https://gitlab.com/getreu/parse-hyperlinks"
-description = "A Nom parser library for hyperlinks with markup."
-categories = ["command-line-utilities", "parser-implementations"]
+repository = "https://gitlab.com/lambdaclass/cairo-rs"
+homepage = "https://gitlab.com/lambdaclass/cairo-rs"
+description = "A Nom parser library for contents between unbalanced tags."
+categories = ["parser-implementations"]
 
 [dependencies]
-nom= "7.1.1"
+nom = { version = "7.1.1", default-features = false }
+
+[features]
+default = ["std"]
+std = ["nom/std"]
+alloc = ["nom/alloc"]
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3.34"

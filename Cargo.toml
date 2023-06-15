@@ -1,56 +1,112 @@
 [workspace]
-members = [".", "felt", "./deps/parse-hyperlinks"]
+members = [
+    ".",
+    "cairo-vm-cli",
+    "felt",
+    "hint_accountant",
+    "./deps/parse-hyperlinks",
+]
 
 [package]
 name = "cairo-vm"
-version = "0.1.1"
+version = "0.3.0-rc1"
 edition = "2021"
-license = "MIT"
+license = "Apache-2.0"
 description = "Blazing fast Cairo interpreter"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [features]
-default = ["with_mimalloc"]
+default = ["std", "with_mimalloc"]
 with_mimalloc = ["mimalloc"]
+std = [
+    "serde_json/std",
+    "serde_bytes/std",
+    "bincode/std",
+    "anyhow/std",
+    "starknet-crypto/std",
+    "parse-hyperlinks/std",
+    "felt/std",
+]
+
+
+# Note that these features are not retro-compatible with the cairo Python VM.
+test_utils = [
+    "skip_next_instruction_hint",
+    "hooks",
+] # This feature will reference every test-oriented feature
+skip_next_instruction_hint = []
+hooks = []
 
 [dependencies]
 mimalloc = { version = "0.1.29", default-features = false, optional = true }
-num-bigint = { version = "0.4", features = ["serde"] }
-num-traits = "0.2"
-num-integer = "0.1.45"
-serde = { version = "1.0", features = ["derive"] }
-serde_bytes = "0.11.1"
-serde_json = { version = "1.0", features = ["arbitrary_precision"] }
-hex = "0.4.3"
-bincode = "1.2.1"
-starknet-crypto = "0.2.0"
-clap = { version = "3.2.5", features = ["derive"] }
-sha3 = "0.10.1"
-rand_core = "0.6.4"
-lazy_static = "1.4.0"
-nom = "7"
-sha2 = {version="0.10.2", features=["compress"]}
-thiserror = "1.0.32"
-generic-array = "0.14.6"
-keccak = "0.1.2"
+num-bigint = { version = "0.4", features = [
+    "serde",
+    "rand",
+], default-features = false }
+rand = { version = "0.8.3", features = ["small_rng"], default-features = false }
+num-traits = { version = "0.2", default-features = false }
+num-integer = { version = "0.1.45", default-features = false }
+num-prime = { git = " https://github.com/tdelabro/num-prime.git", branch = "no_std-support", default-features = false, features = [
+    "big-int",
+] }
+serde = { version = "1.0", features = ["derive"], default-features = false }
+serde_bytes = { version = "0.11.9", default-features = false, features = [
+    "alloc",
+] }
+serde_json = { version = "1.0", features = [
+    "arbitrary_precision",
+    "alloc",
+], default-features = false }
+hex = { version = "0.4.3", default-features = false }
+bincode = { version = "2.0.0-rc.2", tag = "v2.0.0-rc.2", git = "https://github.com/bincode-org/bincode.git", default-features = false, features = [
+    "serde",
+] }
+starknet-crypto = { version = "0.4.3", default-features = false, features = [
+    "signature-display",
+    "alloc",
+] }
+sha3 = { version = "0.10.1", default-features = false }
+rand_core = { version = "0.6.4", default-features = false }
+lazy_static = { version = "1.4.0", default-features = false, features = [
+    "spin_no_std",
+] }
+nom = { version = "7", default-features = false }
+sha2 = { version = "0.10.2", features = ["compress"], default-features = false }
+generic-array = { version = "0.14.6", default-features = false }
+keccak = { version = "0.1.2", default-features = false }
+hashbrown = { version = "0.13.2", features = ["serde"] }
+anyhow = { version = "1.0.69", default-features = false }
+thiserror = { version = "1.0.32", default-features = false }
+thiserror-no-std = "2.0.2"
+
 # This crate has only one function `take_until_unbalanced` that is
 # very useful for our parsing purposes:
 # https://stackoverflow.com/questions/70630556/parse-allowing-nested-parentheses-in-nom
 # There is a proposal for extending nom::delimited to use this function:
 # https://github.com/Geal/nom/issues/1253
-parse-hyperlinks = { path = "./deps/parse-hyperlinks", version = "0.23.4" }
-felt = { package = "cairo-felt", path = "./felt", version = "0.1.0" }
+parse-hyperlinks = { package = "cairo-take_until_unbalanced", path = "./deps/parse-hyperlinks", version = "0.24.2-rc1", default-features = false, features = [
+    "alloc",
+] }
+felt = { package = "cairo-felt", path = "./felt", version = "0.3.0-rc1", default-features = false, features = [
+    "alloc",
+] }
+bitvec = { version = "1", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
+pretty_assertions = "1.3.0"
+assert_matches = "1.5.0"
+rstest = { version = "0.17.0", default-features = false }
+original-num-prime = { package = "num-prime", version = "0.4.3", features = [
+    "big-int",
+], default-features = false }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3.34"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 iai = "0.1"
-
-[dev-dependencies.rusty-hook]
-version = "0.11"
-
-[dev-dependencies.criterion]
-version = "0.3"
-features = ["html_reports"]
+rusty-hook = "0.11"
+criterion = { version = "0.3", features = ["html_reports"] }
+proptest = "1.0.0"
 
 [[bench]]
 path = "bench/iai_benchmark.rs"
@@ -61,12 +117,6 @@ harness = false
 path = "bench/criterion_benchmark.rs"
 name = "criterion_benchmark"
 harness = false
-
-[[bin]]
-name = "cairo-rs-run"
-path = "src/main.rs"
-bench = false
-doc = false
 
 [profile.release]
 lto = "fat"

@@ -1,4 +1,11 @@
+coverage:
+  status:
+    project:
+      default: # This can be anything, but it needs to exist as the name
+        threshold: 5%
+
 ignore:
   - src/vm/errors
   - src/types/errors
+  - hint_accountant
   - ./deps

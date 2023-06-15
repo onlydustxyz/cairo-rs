@@ -41,5 +41,7 @@
             "type": "const",
             "value": 340282366920938463463374607431768211456
         }
-    }
+    },
+    "main_scope": "__main__",
+    "compiler_version": "0.11.0"
 }

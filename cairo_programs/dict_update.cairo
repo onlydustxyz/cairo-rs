@@ -19,7 +19,7 @@ func main() {
     let (local val3: felt) = dict_read{dict_ptr=my_dict}(key=10);
     assert val3 = 22;
     dict_update{dict_ptr=my_dict}(key=10, prev_value=22, new_value=-8);
-    let (local val4 : felt) = dict_read{dict_ptr=my_dict}(key=10);
+    let (local val4: felt) = dict_read{dict_ptr=my_dict}(key=10);
     assert val4 = -8;
     return ();
 }

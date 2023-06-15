@@ -1,10 +1,10 @@
-use felt::Felt;
+use felt::Felt252;
 use num_traits::ToPrimitive;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::vm::decoding::decoder::decode_instruction;
 
-#[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub enum Register {
     AP,
     FP,
@@ -15,7 +15,7 @@ pub struct Instruction {
     pub off0: isize,
     pub off1: isize,
     pub off2: isize,
-    pub imm: Option<Felt>,
+    pub imm: Option<Felt252>,
     pub dst_register: Register,
     pub op0_register: Register,
     pub op1_addr: Op1Addr,
@@ -83,7 +83,7 @@ impl Instruction {
 }
 
 // Returns True if the given instruction looks like a call instruction.
-pub(crate) fn is_call_instruction(encoded_instruction: &Felt, imm: Option<&Felt>) -> bool {
+pub(crate) fn is_call_instruction(encoded_instruction: &Felt252, imm: Option<&Felt252>) -> bool {
     let encoded_i64_instruction: i64 = match encoded_instruction.to_i64() {
         Some(num) => num,
         None => return false,
@@ -102,19 +102,35 @@ pub(crate) fn is_call_instruction(encoded_instruction: &Felt, imm: Option<&Felt>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use felt::NewFelt;
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn is_call_instruction_true() {
-        let encoded_instruction = Felt::new(1226245742482522112_i64);
+        let encoded_instruction = Felt252::new(1226245742482522112_i64);
         assert!(is_call_instruction(
             &encoded_instruction,
-            Some(&Felt::new(2))
+            Some(&Felt252::new(2))
         ));
     }
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn is_call_instruction_false() {
-        let encoded_instruction = Felt::new(4612671187288031229_i64);
+        let encoded_instruction = Felt252::new(4612671187288031229_i64);
         assert!(!is_call_instruction(&encoded_instruction, None));
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn instruction_size() {
+        let encoded_instruction = Felt252::new(1226245742482522112_i64);
+        let instruction = decode_instruction(
+            encoded_instruction.to_i64().unwrap(),
+            Some(&Felt252::new(2)),
+        )
+        .unwrap();
+        assert_eq!(instruction.size(), 2);
     }
 }

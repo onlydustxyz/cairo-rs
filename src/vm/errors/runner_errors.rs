@@ -1,26 +1,22 @@
-use std::collections::HashSet;
+use crate::stdlib::{collections::HashSet, prelude::*};
+
+#[cfg(feature = "std")]
+use thiserror::Error;
+#[cfg(not(feature = "std"))]
+use thiserror_no_std::Error;
 
 use super::memory_errors::MemoryError;
-use crate::types::relocatable::MaybeRelocatable;
-use felt::Felt;
-use thiserror::Error;
+use crate::types::{errors::math_errors::MathError, relocatable::Relocatable};
+use felt::Felt252;
 
-#[derive(Debug, PartialEq, Eq, Error)]
+#[derive(Debug, PartialEq, Error)]
 pub enum RunnerError {
-    #[error("Can't initialize state without an execution base")]
+    #[error("Initialization failure: No execution base")]
     NoExecBase,
-    #[error("Can't initialize the function entrypoint without an execution base")]
-    NoExecBaseForEntrypoint,
     #[error("Initialization failure: No program base")]
     NoProgBase,
     #[error("Missing main()")]
     MissingMain,
-    #[error("Uninitialized base for builtin")]
-    UninitializedBase,
-    #[error("Base for builtin is not finished")]
-    BaseNotFinished,
-    #[error("Failed to write program output")]
-    WriteFail,
     #[error("Found None PC during VM initialization")]
     NoPC,
     #[error("Found None AP during VM initialization")]
@@ -31,56 +27,44 @@ pub enum RunnerError {
     MemoryValidationError(MemoryError),
     #[error("Memory loading failed during state initialization: {0}")]
     MemoryInitializationError(MemoryError),
-    #[error("Memory addresses must be relocatable")]
-    NonRelocatableAddress,
-    #[error("Runner base mustn't be in a TemporarySegment, segment: {0}")]
-    RunnerInTemporarySegment(isize),
     #[error("Failed to convert string to FieldElement")]
     FailedStringConversion,
-    #[error("Expected integer at address {0:?}")]
-    ExpectedInteger(MaybeRelocatable),
-    #[error("Failed to retrieve value from address {0:?}")]
-    MemoryGet(MaybeRelocatable),
-    #[error(transparent)]
-    FailedMemoryGet(MemoryError),
     #[error("EcOpBuiltin: m should be at most {0}")]
-    EcOpBuiltinScalarLimit(Felt),
+    EcOpBuiltinScalarLimit(Felt252),
     #[error("Given builtins are not in appropiate order")]
     DisorderedBuiltins,
     #[error("Expected integer at address {0:?} to be smaller than 2^{1}, Got {2}")]
-    IntegerBiggerThanPowerOfTwo(MaybeRelocatable, u32, Felt),
+    IntegerBiggerThanPowerOfTwo(Relocatable, u32, Felt252),
     #[error("{0}")]
     EcOpSameXCoordinate(String),
     #[error("EcOpBuiltin: point {0:?} is not on the curve")]
-    PointNotOnCurve((usize, usize)),
+    PointNotOnCurve((Felt252, Felt252)),
     #[error("Builtin(s) {0:?} not present in layout {1}")]
-    NoBuiltinForInstance(HashSet<String>, String),
+    NoBuiltinForInstance(HashSet<&'static str>, String),
     #[error("Invalid layout {0}")]
     InvalidLayoutName(String),
-    #[error("Run has already ended.")]
-    RunAlreadyFinished,
-    #[error("Run must be ended before calling finalize_segments.")]
+    #[error("end_run called twice.")]
+    EndRunCalledTwice,
+    #[error("end_run must be called before finalize_segments.")]
     FinalizeNoEndRun,
-    #[error("Builtin {0} not included.")]
-    BuiltinNotIncluded(String),
-    #[error("Builtin segment name collision on '{0}'")]
-    BuiltinSegmentNameCollision(&'static str),
+    #[error("end_run must be called before read_return_values.")]
+    ReadReturnValuesNoEndRun,
     #[error("Error while finalizing segments: {0}")]
     FinalizeSegements(MemoryError),
     #[error("finalize_segments called but proof_mode is not enabled")]
     FinalizeSegmentsNoProofMode,
-    #[error("Final stack error")]
-    FinalStack,
-    #[error("Invalid stop pointer for {0} ")]
-    InvalidStopPointer(String),
+    #[error("Invalid stop pointer for {0}: Stop pointer has value {1} but builtin segment is {2}")]
+    InvalidStopPointerIndex(&'static str, Relocatable, usize),
+    #[error("Invalid stop pointer for {0}. Expected: {1}, found: {2}")]
+    InvalidStopPointer(&'static str, Relocatable, Relocatable),
+    #[error("No stop pointer found for builtin {0}")]
+    NoStopPointer(&'static str),
     #[error("Running in proof-mode but no __start__ label found, try compiling with proof-mode")]
     NoProgramStart,
     #[error("Running in proof-mode but no __end__ label found, try compiling with proof-mode")]
     NoProgramEnd,
     #[error("Could not convert slice to array")]
     SliceToArrayError,
-    #[error("Missing builtin: {0}")]
-    MissingBuiltin(String),
     #[error("Cannot add the return values to the public memory after segment finalization.")]
     FailedAddingReturnValues,
     #[error("Missing execution public memory")]
@@ -89,10 +73,16 @@ pub enum RunnerError {
     CouldntParsePrime,
     #[error("Could not convert vec with Maybe Relocatables into u64 array")]
     MaybeRelocVecToU64ArrayError,
-    #[error("Expected Maybe Relocatable with Int value but get one with Relocatable")]
+    #[error("Expected Integer value, got Relocatable instead")]
     FoundNonInt,
-    #[error("{0} is not divisible by {1}")]
-    SafeDivFailUsize(usize, usize),
     #[error(transparent)]
-    MemoryError(#[from] MemoryError),
+    Memory(#[from] MemoryError),
+    #[error(transparent)]
+    Math(#[from] MathError),
+    #[error("keccak_builtin: Failed to get first input address")]
+    KeccakNoFirstInput,
+    #[error("{0}: Expected integer at address {1}")]
+    BuiltinExpectedInteger(&'static str, Relocatable),
+    #[error("keccak_builtin: Failed to convert input cells to u64 values")]
+    KeccakInputCellsNotU64,
 }

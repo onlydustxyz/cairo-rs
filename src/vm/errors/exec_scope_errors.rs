@@ -1,4 +1,7 @@
+#[cfg(feature = "std")]
 use thiserror::Error;
+#[cfg(not(feature = "std"))]
+use thiserror_no_std::Error;
 
 #[derive(Eq, Hash, PartialEq, Debug, Error)]
 pub enum ExecScopeError {

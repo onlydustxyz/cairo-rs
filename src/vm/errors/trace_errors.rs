@@ -1,16 +1,20 @@
-use crate::vm::errors::memory_errors::MemoryError;
+#[cfg(feature = "std")]
 use thiserror::Error;
+#[cfg(not(feature = "std"))]
+use thiserror_no_std::Error;
 
-#[derive(Debug, PartialEq, Eq, Error)]
+use crate::vm::errors::memory_errors::MemoryError;
+
+#[derive(Debug, PartialEq, Error)]
 pub enum TraceError {
     #[error("Trace is not enabled for this run")]
     TraceNotEnabled,
     #[error("Trace is already relocated")]
     AlreadyRelocated,
-    #[error("Trace register must be relocatable")]
-    RegNotRelocatable,
-    #[error("No relocation found for this segment")]
+    #[error("No relocation found for execution segment")]
     NoRelocationFound,
     #[error(transparent)]
     MemoryError(#[from] MemoryError),
+    #[error("Trace not relocated")]
+    TraceNotRelocated,
 }

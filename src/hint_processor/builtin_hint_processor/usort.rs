@@ -1,3 +1,5 @@
+use crate::stdlib::{any::Any, collections::HashMap, prelude::*};
+
 use crate::{
     hint_processor::{
         builtin_hint_processor::hint_utils::{
@@ -9,12 +11,11 @@ use crate::{
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
-use felt::{Felt, NewFelt};
+use felt::Felt252;
 use num_traits::{ToPrimitive, Zero};
-use std::{any::Any, collections::HashMap};
 
 pub fn usort_enter_scope(exec_scopes: &mut ExecutionScopes) -> Result<(), HintError> {
-    if let Ok(usort_max_size) = exec_scopes.get::<Felt>("usort_max_size") {
+    if let Ok(usort_max_size) = exec_scopes.get::<Felt252>("usort_max_size") {
         let boxed_max_size: Box<dyn Any> = Box::new(usort_max_size);
         exec_scopes.enter_scope(HashMap::from([(
             "usort_max_size".to_string(),
@@ -45,10 +46,10 @@ pub fn usort_body(
             ));
         }
     }
-    let mut positions_dict: HashMap<Felt, Vec<u64>> = HashMap::new();
-    let mut output: Vec<Felt> = Vec::new();
+    let mut positions_dict: HashMap<Felt252, Vec<u64>> = HashMap::new();
+    let mut output: Vec<Felt252> = Vec::new();
     for i in 0..input_len_u64 {
-        let val = vm.get_integer(&(input_ptr + i as usize))?.into_owned();
+        let val = vm.get_integer((input_ptr + i as usize)?)?.into_owned();
         if let Err(output_index) = output.binary_search(&val) {
             output.insert(output_index, val.clone());
         }
@@ -65,16 +66,16 @@ pub fn usort_body(
     let output_len = output.len();
 
     for (i, sorted_element) in output.into_iter().enumerate() {
-        vm.insert_value(&(output_base + i), sorted_element)?;
+        vm.insert_value((output_base + i)?, sorted_element)?;
     }
 
     for (i, repetition_amount) in multiplicities.into_iter().enumerate() {
-        vm.insert_value(&(multiplicities_base + i), Felt::new(repetition_amount))?;
+        vm.insert_value((multiplicities_base + i)?, Felt252::new(repetition_amount))?;
     }
 
     insert_value_from_var_name(
         "output_len",
-        Felt::new(output_len),
+        Felt252::new(output_len),
         vm,
         ids_data,
         ap_tracking,
@@ -98,12 +99,12 @@ pub fn verify_usort(
 ) -> Result<(), HintError> {
     let value = get_integer_from_var_name("value", vm, ids_data, ap_tracking)?.clone();
     let mut positions = exec_scopes
-        .get_mut_dict_ref::<Felt, Vec<u64>>("positions_dict")?
-        .remove(&value)
+        .get_mut_dict_ref::<Felt252, Vec<u64>>("positions_dict")?
+        .remove(value.as_ref())
         .ok_or(HintError::UnexpectedPositionsDictFail)?;
     positions.reverse();
     exec_scopes.insert_value("positions", positions);
-    exec_scopes.insert_value("last_pos", Felt::zero());
+    exec_scopes.insert_value("last_pos", Felt252::zero());
     Ok(())
 }
 
@@ -126,15 +127,16 @@ pub fn verify_multiplicity_body(
         .get_mut_list_ref::<u64>("positions")?
         .pop()
         .ok_or(HintError::CouldntPopPositions)?;
-    let pos_diff = Felt::new(current_pos) - exec_scopes.get::<Felt>("last_pos")?;
+    let pos_diff = Felt252::new(current_pos) - exec_scopes.get::<Felt252>("last_pos")?;
     insert_value_from_var_name("next_item_index", pos_diff, vm, ids_data, ap_tracking)?;
-    exec_scopes.insert_value("last_pos", Felt::new(current_pos + 1));
+    exec_scopes.insert_value("last_pos", Felt252::new(current_pos + 1));
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use crate::{
         any_box,
         hint_processor::{
@@ -144,32 +146,35 @@ mod tests {
             },
             hint_processor_definition::HintProcessor,
         },
-        types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
+        types::exec_scope::ExecutionScopes,
         utils::test_utils::*,
-        vm::{
-            errors::memory_errors::MemoryError, runners::builtin_runner::RangeCheckBuiltinRunner,
-            vm_core::VirtualMachine, vm_memory::memory::Memory,
-        },
+        vm::vm_core::VirtualMachine,
     };
+    use assert_matches::assert_matches;
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn usort_with_max_size() {
         let mut exec_scopes = scope![("usort_max_size", 1_u64)];
-        assert_eq!(usort_enter_scope(&mut exec_scopes), Ok(()));
+        assert_matches!(usort_enter_scope(&mut exec_scopes), Ok(()));
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn usort_out_of_range() {
         let mut vm = vm_with_range_check!();
         vm.run_context.fp = 2;
         add_segments!(vm, 1);
-        vm.memory = memory![((1, 0), (2, 1)), ((1, 1), 5)];
+        vm.segments = segments![((1, 0), (2, 1)), ((1, 1), 5)];
         //Create hint_data
         let ids_data = ids_data!["input", "input_len"];
         let mut exec_scopes = scope![("usort_max_size", 1_u64)];
-        assert_eq!(
+        assert_matches!(
             run_hint!(vm, ids_data, USORT_BODY, &mut exec_scopes),
-            Err(HintError::UsortOutOfRange(1, Felt::new(5_i32)))
+            Err(HintError::UsortOutOfRange(1, x)) if x == Felt252::new(5_i32)
         );
     }
 }

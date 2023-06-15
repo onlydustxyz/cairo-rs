@@ -4,17 +4,11 @@ from starkware.cairo.common.alloc import alloc
 func main() {
     alloc_locals;
     // Create temporary_array in a temporary segment
-    local temporary_array : felt*;
-    %{
-        ids.temporary_array = segments.add_temp_segment()
-    %}
-
-    // Insert values into temporary_array
-    assert temporary_array[0] = 1;
-    assert temporary_array[1] = 2;
+    local temporary_array: felt*;
+    %{ ids.temporary_array = segments.add_temp_segment() %}
 
     // Create array
-    let (array : felt*) = alloc();
+    let (array: felt*) = alloc();
 
     // Insert values into array;
     assert array[0] = 50;
@@ -29,5 +23,5 @@ func main() {
     assert array[2] = 52;
     assert temporary_array[2] = 52;
 
-    return();
+    return ();
 }

@@ -1,0 +1,28 @@
+name: Update missing hints tracking issue
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  run:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@1.66.1
+    - name: Set up Cargo cache
+      uses: Swatinem/rust-cache@v2
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Run the hint accounting script
+      run: cargo r -p hint_accountant | tee comment.md
+    - name: Update comment in tracking issue
+      uses: peter-evans/create-or-update-comment@v3
+      with:
+        issue-number: 1031
+        comment-id: 1518234161
+        body-path: comment.md
+        edit-mode: replace

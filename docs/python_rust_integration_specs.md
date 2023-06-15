@@ -14,7 +14,7 @@ In order to allow cairo-rs to execute any Python code embedded into a Cairo prog
 * The crate cairo-rs-py will behave as a cairo-rs VM wrapper, which can also be imported as a Python module. 
 * The cairo-rs-py VM can be run for a set number of steps.
 * The cairo-rs-py VM can be run for a set number of steps, paused, and then continue its execution.
-* Variables defined by a hint can only be accessed by hints implemented in the same language, i.e., Rust hints are aware only of variables defined by Rust hints and Python hints are aware only of variables defined by Python hints. By Rust hints we refer to those implemented by the builtin hint processor.	 	
+* Variables defined by a hint can only be accessed by hints implemented in the same language, i.e., Rust hints are aware only of variables defined by Rust hints and Python hints are aware only of variables defined by Python hints. By Rust hints we refer to those implemented by the built-in hint processor.	 	
 * The cairo-rs-py VM can be instantiated by a Python interpreter as a regular object. 
 * A Rust or Python program can instantiate one or more independent cairo-rs-py VMs, allowing for multiple coexisting VMs.
 * When instantiated by a Python interpreter, that same interpreter will be used to execute Python hints. 
@@ -23,7 +23,7 @@ In order to allow cairo-rs to execute any Python code embedded into a Cairo prog
 * An instance of a cairo-rs-py VM will be running either a cairo program interpretation loop or a Python hint, but not both at the same time.
 	* i.e. hints do not run concurrently 
 	* The VM state shared with hints can only be accessed by a single hint at a time.
-	* The VM memory is private to a VM instance and cannot be shared across differents VM instances.
+	* The VM memory is private to a VM instance and cannot be shared across different VM instances.
 	* An instance of a VM will always run on the same thread.
 	* Multiple instances of a VM can run on the same thread.
 * Hint interaction with the VM will be restricted to:

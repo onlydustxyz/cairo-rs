@@ -1,6 +1,7 @@
 name: rust
 
 on:
+  merge_group:
   push:
     branches: [ main ]
   pull_request:
@@ -24,25 +25,23 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Set up cargo cache
-      uses: actions/cache@v3
-      continue-on-error: false
+    - name: Install Nextest
+      uses: taiki-e/install-action@nextest
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+    - name: Install wasm-bindgen-cli
+      uses: jetli/wasm-pack-action@v0.4.0
       with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/debug/deps/
-          target/release/deps/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-
+        version: "v0.10.3"
 
-    - name: Install test dependencies
-      run: pip install ecdsa fastecdsa sympy cairo-lang
-    - uses: actions/checkout@v3
+    - name: Set up cargo cache
+      uses: Swatinem/rust-cache@v2
+    - name: Checkout
+      uses: actions/checkout@v3
       with:
-        fetch-depth: 0
+        fetch-depth: 0 
+    - name: Install test dependencies
+      run: pip install -r requirements.txt
     - name: Format
       run: cargo fmt --all -- --check
     - name: Build
@@ -52,40 +51,40 @@ jobs:
       id: cache-cairo-programs
       with:
         path: |
-          cairo_programs/**.json
-          cairo_programs/**.memory
-          cairo_programs/**.trace
-          !cairo_programs/**.rs.*
-        key: cairo-cache-${{ hashFiles( 'cairo_programs/**.cairo' ) }}
+          cairo_programs/*.json
+          cairo_programs/*.memory
+          cairo_programs/*.trace
+          !cairo_programs/*.rs.*
+          cairo_programs/*/*.json
+          cairo_programs/*/*.memory
+          cairo_programs/*/*.trace
+          !cairo_programs/*/*.rs.*
+        key: cairo-cache-${{ hashFiles( 'cairo_programs/*.cairo', 'cairo_programs/*/*.cairo' ) }}
+        restore-keys: cairo-cache-
     - name: Restore timestamps
       uses: chetan/git-restore-mtime-action@v1
     - name: Install dependencies
-      run: pip install ecdsa fastecdsa sympy cairo-lang
+      run: pip install -r requirements.txt
     - name: Run tests
       run: make -j test
+    - name: Run tests no_std
+      run: make -j test-no_std
+    - name: Run wasm tests
+      run: make -j test-wasm
     - name: Compare trace and memory
-      run: make compare_trace_memory
+      run: make -j compare_trace_memory
     - name: Compare trace and memory with proof mode
-      run: make compare_trace_memory_proof
+      run: make -j compare_trace_memory_proof
     - name: Run clippy
       run: make clippy
     - name: Coverage
       run: make coverage
-    - name: Cache Codecov-report
-      uses: actions/upload-artifact@master
-      with:
-        name: codecov-report
-        path: target/tarpaulin
-  upload-codecov:
-    needs: build
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Retrieve cached report
-      uses: actions/download-artifact@master
-      with:
-        name: codecov-report
-        path: target/tarpaulin
     - name: Upload coverage to codecov.io
       uses: codecov/codecov-action@v3
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: lcov.info
         fail_ci_if_error:     true
+    # NB: the following step is needed so caching doesn't cause misleading coverage in later runs
+    - name: Clean coverage artifacts
+      run: make coverage-clean

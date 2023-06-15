@@ -1,3 +1,5 @@
+use crate::stdlib::{collections::HashMap, prelude::*};
+
 use crate::hint_processor::builtin_hint_processor::hint_utils::get_ptr_from_var_name;
 use crate::hint_processor::{
     builtin_hint_processor::hint_utils::insert_value_from_var_name,
@@ -5,9 +7,7 @@ use crate::hint_processor::{
 };
 use crate::serde::deserialize_program::ApTracking;
 use crate::vm::errors::hint_errors::HintError;
-use crate::vm::errors::vm_errors::VirtualMachineError;
 use crate::vm::vm_core::VirtualMachine;
-use std::collections::HashMap;
 
 /*
 Implements hint:
@@ -22,7 +22,7 @@ pub fn relocate_segment(
     let dest_ptr = get_ptr_from_var_name("dest_ptr", vm, ids_data, ap_tracking)?;
 
     vm.add_relocation_rule(src_ptr, dest_ptr)
-        .map_err(VirtualMachineError::MemoryError)?;
+        .map_err(HintError::Memory)?;
     Ok(())
 }
 
@@ -47,6 +47,7 @@ pub fn temporary_array(
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use crate::{
         any_box,
         hint_processor::{
@@ -56,15 +57,17 @@ mod tests {
             },
             hint_processor_definition::HintProcessor,
         },
-        types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
+        types::exec_scope::ExecutionScopes,
         utils::test_utils::*,
-        vm::{
-            errors::memory_errors::MemoryError, vm_core::VirtualMachine, vm_memory::memory::Memory,
-        },
+        vm::vm_core::VirtualMachine,
     };
-    use std::any::Any;
+    use assert_matches::assert_matches;
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_relocate_segment() {
         let hint_code = hint_code::RELOCATE_SEGMENT;
         //Initialize vm
@@ -72,26 +75,28 @@ mod tests {
         //Initialize fp
         vm.run_context.fp = 2;
         //Insert ids into memory
-        vm.memory = memory![((1, 0), (-2, 0)), ((1, 1), (3, 0)), ((3, 0), 42)];
+        vm.segments = segments![((1, 0), (-2, 0)), ((1, 1), (3, 0)), ((3, 0), 42)];
 
         //Create ids_data & hint_data
         let ids_data = ids_data!["src_ptr", "dest_ptr"];
 
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code), Ok(()));
+        assert_matches!(run_hint!(vm, ids_data, hint_code), Ok(()));
 
-        vm.memory
+        vm.segments
+            .memory
             .relocate_memory()
             .expect("Couldn't relocate memory.");
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn run_temporary_array() {
         let hint_code = hint_code::TEMPORARY_ARRAY;
         //Initialize vm
         let mut vm = vm!();
-        vm.segments.add(&mut vm.memory);
-        vm.segments.add(&mut vm.memory);
+        vm.segments.add();
+        vm.segments.add();
         //Initialize fp
         vm.run_context.fp = 1;
 
@@ -99,7 +104,7 @@ mod tests {
         let ids_data = ids_data!["temporary_array"];
 
         //Execute the hint
-        assert_eq!(run_hint!(vm, ids_data, hint_code), Ok(()));
-        check_memory!(vm.memory, ((1, 0), (-1, 0)));
+        assert_matches!(run_hint!(vm, ids_data, hint_code), Ok(()));
+        check_memory!(vm.segments.memory, ((1, 0), (-1, 0)));
     }
 }

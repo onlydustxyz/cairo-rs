@@ -7,18 +7,12 @@ from starkware.cairo.common.dict_access import DictAccess
 func main{range_check_ptr}() -> () {
     alloc_locals;
     let (dict_start: DictAccess*) = alloc();
-    assert dict_start[0] = DictAccess(
-        key=0, prev_value=100, new_value=100);
-    assert dict_start[1] = DictAccess(
-        key=1, prev_value=50, new_value=50);
-    assert dict_start[2] = DictAccess(
-        key=0, prev_value=100, new_value=200);
-    assert dict_start[3] = DictAccess(
-        key=1, prev_value=50, new_value=100);
-    assert dict_start[4] = DictAccess(
-        key=0, prev_value=200, new_value=300);
-    assert dict_start[5] = DictAccess(
-        key=1, prev_value=100, new_value=150);
+    assert dict_start[0] = DictAccess(key=0, prev_value=100, new_value=100);
+    assert dict_start[1] = DictAccess(key=1, prev_value=50, new_value=50);
+    assert dict_start[2] = DictAccess(key=0, prev_value=100, new_value=200);
+    assert dict_start[3] = DictAccess(key=1, prev_value=50, new_value=100);
+    assert dict_start[4] = DictAccess(key=0, prev_value=200, new_value=300);
+    assert dict_start[5] = DictAccess(key=1, prev_value=100, new_value=150);
 
     let dict_end = dict_start + 6 * DictAccess.SIZE;
     // (dict_start, dict_end) now represents the dictionary
@@ -33,9 +27,7 @@ func main{range_check_ptr}() -> () {
 
     // Check the values of the squashed_dict
     // should be: {0: (100, 300), 1: (50, 150)}
-    assert squashed_dict_start[0] = DictAccess(
-        key=0, prev_value=100, new_value=300);
-    assert squashed_dict_start[1] = DictAccess(
-        key=1, prev_value=50, new_value=150);
+    assert squashed_dict_start[0] = DictAccess(key=0, prev_value=100, new_value=300);
+    assert squashed_dict_start[1] = DictAccess(key=1, prev_value=50, new_value=150);
     return ();
 }

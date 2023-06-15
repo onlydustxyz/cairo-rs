@@ -2,7 +2,7 @@
 
 ## Requirements for hints
 - Must cairo-rs support reuse of existing hints in starknet? Is it enough to enable re-writing these hints as python-embedded-in-cairo that uses a new API to interface with the cairo-rs VM state?
-- Aside from mutable access to the memory manager and the registers, what do non-builtin hints require in terms of mutating the VM state? Is there anything that is explicitly not allowed or desireable, or that is currently allowed but would be better restricted?
+- Aside from mutable access to the memory manager and the registers, what do non-builtin hints require in terms of mutating the VM state? Is there anything that is explicitly not allowed or desirable, or that is currently allowed but would be better restricted?
 - What is the medium-long term plan for hints? Be able to implement hints as rust-embedded-in-cairo, support python hints ad aeternum, add support for more languages?
 - We should go through the implementation of the syscall hints and think how they can be implemented with the current cairo-rs code, what is missing, etc.
 
@@ -40,8 +40,8 @@ Notes
 - How to provide the embedded python interpreter access to cairo-rs VM state?
 - How hard will converting between type representations be? 
 - One possibility that can be explored is writing a new implementation of MemorySegmentManager in python which works together with the python embedding mechanism, so that hints that get passed a reference to the MSM will be able to access cairo-rs instead of the python vm
-- Another possibility that might be necesary is modifying the starknet hints in python to use a new interface mechanism.
-- Of the three embedding options, cpython seems the most straighforward but also limited, pyo3 the most powerful, and rustpython the least mature
+- Another possibility that might be necessary is modifying the starknet hints in python to use a new interface mechanism.
+- Of the three embedding options, cpython seems the most straightforward but also limited, pyo3 the most powerful, and rustpython the least mature
 - From [here](https://www.infoworld.com/article/3664124/how-to-use-rust-with-python-and-python-with-rust.html):
       An important caveat with both cpython and PyO3 is to always minimize the number of times data is passed back and forth between the two languages.
       Each call from Python to Rust or vice versa incurs some overhead.
@@ -55,7 +55,7 @@ Notes
 	- How to provide access to vm state, and allow state modification by hints?
 	- Should the hint code running in python intermittingly call an API to modify cairo-rs VM state, or should it run in completion, and send changes back to cairo-rs once done?
 	- Should this protocol send and receive a full vm state representation, or just some representation of the changes to state made by the hint?
-	- Open question: aside from the the api to indirectly modify cairo-rs vm state, what else is needed to allow hints to run? dependencies?
+	- Open question: aside from the api to indirectly modify cairo-rs vm state, what else is needed to allow hints to run? dependencies?
 	- How will having this python codebase affect testing, packaging, running, etc?
 	- (+) more easily extensible to other languages?
 	- (-) likely more overhead from state (de)serialization

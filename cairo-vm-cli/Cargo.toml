@@ -1,0 +1,20 @@
+[package]
+name = "cairo-vm-cli"
+version = "0.3.0-rc1"
+edition = "2021"
+
+[dependencies]
+bincode = { version = "2.0.0-rc.2", tag = "v2.0.0-rc.2", git = "https://github.com/bincode-org/bincode.git" }
+cairo-vm = { path = "..", version = "0.3.0-rc1" }
+clap = { version = "3.2.5", features = ["derive"] }
+mimalloc = { version = "0.1.29", default-features = false, optional = true }
+nom = "7"
+thiserror = { version = "1.0.32" }
+
+[dev-dependencies]
+assert_matches = "1.5.0"
+rstest = "0.17.0"
+
+[features]
+default = ["with_mimalloc"]
+with_mimalloc = ["cairo-vm/with_mimalloc", "mimalloc"]

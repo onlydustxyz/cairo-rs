@@ -1,18 +1,17 @@
+use crate::stdlib::borrow::Cow;
+
 use crate::{
     serde::deserialize_program::{ApTracking, OffsetValue},
     types::{
+        errors::math_errors::MathError,
         instruction::Register,
         relocatable::{MaybeRelocatable, Relocatable},
     },
-    vm::{
-        errors::{hint_errors::HintError, vm_errors::VirtualMachineError},
-        vm_core::VirtualMachine,
-    },
+    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
-use std::borrow::Cow;
 
 use super::hint_processor_definition::HintReference;
-use felt::Felt;
+use felt::Felt252;
 use num_traits::ToPrimitive;
 
 ///Inserts value into the address of the given ids variable
@@ -22,17 +21,18 @@ pub fn insert_value_from_reference(
     hint_reference: &HintReference,
     ap_tracking: &ApTracking,
 ) -> Result<(), HintError> {
-    let var_addr = compute_addr_from_reference(hint_reference, vm, ap_tracking)?;
-    vm.insert_value(&var_addr, value)
-        .map_err(HintError::Internal)
+    let var_addr = compute_addr_from_reference(hint_reference, vm, ap_tracking)
+        .ok_or(HintError::UnknownIdentifierInternal)?;
+    vm.insert_value(var_addr, value).map_err(HintError::Memory)
 }
 
 ///Returns the Integer value stored in the given ids variable
+/// Returns an internal error, users should map it into a more informative type
 pub fn get_integer_from_reference<'a>(
     vm: &'a VirtualMachine,
     hint_reference: &'a HintReference,
     ap_tracking: &ApTracking,
-) -> Result<Cow<'a, Felt>, HintError> {
+) -> Result<Cow<'a, Felt252>, HintError> {
     // if the reference register is none, this means it is an immediate value and we
     // should return that value.
 
@@ -40,8 +40,10 @@ pub fn get_integer_from_reference<'a>(
         return Ok(Cow::Borrowed(int_1));
     }
 
-    let var_addr = compute_addr_from_reference(hint_reference, vm, ap_tracking)?;
-    vm.get_integer(&var_addr).map_err(HintError::Internal)
+    let var_addr = compute_addr_from_reference(hint_reference, vm, ap_tracking)
+        .ok_or(HintError::UnknownIdentifierInternal)?;
+    vm.get_integer(var_addr)
+        .map_err(|_| HintError::WrongIdentifierTypeInternal(var_addr))
 }
 
 ///Returns the Relocatable value stored in the given ids variable
@@ -50,44 +52,43 @@ pub fn get_ptr_from_reference(
     hint_reference: &HintReference,
     ap_tracking: &ApTracking,
 ) -> Result<Relocatable, HintError> {
-    let var_addr = compute_addr_from_reference(hint_reference, vm, ap_tracking)?;
+    let var_addr = compute_addr_from_reference(hint_reference, vm, ap_tracking)
+        .ok_or(HintError::UnknownIdentifierInternal)?;
     if hint_reference.dereference {
-        Ok(vm.get_relocatable(&var_addr)?)
+        vm.get_relocatable(var_addr)
+            .map_err(|_| HintError::WrongIdentifierTypeInternal(var_addr))
     } else {
         Ok(var_addr)
     }
 }
 
-///Returns the value given by a reference as an Option<MaybeRelocatable>
+///Returns the value given by a reference as [MaybeRelocatable]
 pub fn get_maybe_relocatable_from_reference(
     vm: &VirtualMachine,
     hint_reference: &HintReference,
     ap_tracking: &ApTracking,
-) -> Result<MaybeRelocatable, HintError> {
+) -> Option<MaybeRelocatable> {
     //First handle case on only immediate
     if let OffsetValue::Immediate(num) = &hint_reference.offset1 {
-        return Ok(MaybeRelocatable::from(num));
+        return Some(MaybeRelocatable::from(num));
     }
     //Then calculate address
     let var_addr = compute_addr_from_reference(hint_reference, vm, ap_tracking)?;
-    let value = if hint_reference.dereference {
+    if hint_reference.dereference {
         vm.get_maybe(&var_addr)
-            .map_err(|error| HintError::Internal(VirtualMachineError::MemoryError(error)))?
     } else {
-        return Ok(MaybeRelocatable::from(var_addr));
-    };
-
-    value.ok_or(HintError::FailedToGetIds)
+        Some(MaybeRelocatable::from(var_addr))
+    }
 }
 
-///Computes the memory address of the ids variable indicated by the HintReference as a Relocatable
+///Computes the memory address of the ids variable indicated by the HintReference as a [Relocatable]
 pub fn compute_addr_from_reference(
     //Reference data of the ids variable
     hint_reference: &HintReference,
     vm: &VirtualMachine,
     //ApTracking of the Hint itself
     hint_ap_tracking: &ApTracking,
-) -> Result<Relocatable, HintError> {
+) -> Option<Relocatable> {
     let offset1 =
         if let OffsetValue::Reference(_register, _offset, _deref) = &hint_reference.offset1 {
             get_offset_value_reference(
@@ -98,7 +99,7 @@ pub fn compute_addr_from_reference(
             )?
             .get_relocatable()?
         } else {
-            return Err(HintError::NoRegisterInReference);
+            return None;
         };
 
     match &hint_reference.offset2 {
@@ -112,42 +113,36 @@ pub fn compute_addr_from_reference(
                 &hint_reference.offset2,
             )?;
 
-            Ok(offset1
-                + value
-                    .get_int_ref()?
-                    .to_usize()
-                    .ok_or(VirtualMachineError::BigintToUsizeFail)?)
+            Some((offset1 + value.get_int_ref()?.to_usize()?).ok()?)
         }
-        OffsetValue::Value(value) => Ok(offset1 + *value),
-        _ => Err(HintError::NoRegisterInReference),
+        OffsetValue::Value(value) => Some((offset1 + *value).ok()?),
+        _ => None,
     }
 }
 
 fn apply_ap_tracking_correction(
-    ap: &Relocatable,
+    ap: Relocatable,
     ref_ap_tracking: &ApTracking,
     hint_ap_tracking: &ApTracking,
-) -> Result<Relocatable, HintError> {
+) -> Option<Relocatable> {
     // check that both groups are the same
     if ref_ap_tracking.group != hint_ap_tracking.group {
-        return Err(HintError::InvalidTrackingGroup(
-            ref_ap_tracking.group,
-            hint_ap_tracking.group,
-        ));
+        return None;
     }
     let ap_diff = hint_ap_tracking.offset - ref_ap_tracking.offset;
-    ap.sub_usize(ap_diff).map_err(HintError::Internal)
+    (ap - ap_diff).ok()
 }
 
-//Tries to convert a Felt value to usize
-pub fn felt_to_usize(felt: &Felt) -> Result<usize, VirtualMachineError> {
+//Tries to convert a Felt252 value to usize
+pub fn felt_to_usize(felt: &Felt252) -> Result<usize, MathError> {
     felt.to_usize()
-        .ok_or(VirtualMachineError::BigintToUsizeFail)
+        .ok_or_else(|| MathError::Felt252ToUsizeConversion(felt.clone()))
 }
 
-///Tries to convert a Felt value to u32
-pub fn felt_to_u32(felt: &Felt) -> Result<u32, VirtualMachineError> {
-    felt.to_u32().ok_or(VirtualMachineError::BigintToU32Fail)
+///Tries to convert a Felt252 value to u32
+pub fn felt_to_u32(felt: &Felt252) -> Result<u32, MathError> {
+    felt.to_u32()
+        .ok_or_else(|| MathError::Felt252ToU32Conversion(felt.clone()))
 }
 
 fn get_offset_value_reference(
@@ -155,171 +150,213 @@ fn get_offset_value_reference(
     hint_reference: &HintReference,
     hint_ap_tracking: &ApTracking,
     offset_value: &OffsetValue,
-) -> Result<MaybeRelocatable, HintError> {
-    // let (register, offset , deref) = if let OffsetValue::Reference(register, offset ,deref ) = offset_value {
-    //     (register, offset_value, deref)
-    // } else {
-    //      return Err(HintError::FailedToGetIds);
-    // };
+) -> Option<MaybeRelocatable> {
     let (register, offset, deref) = match offset_value {
         OffsetValue::Reference(register, offset, deref) => (register, offset, deref),
-        _ => return Err(HintError::FailedToGetIds),
+        _ => return None,
     };
 
     let base_addr = if register == &Register::FP {
         vm.get_fp()
     } else {
-        let var_ap_trackig = hint_reference
-            .ap_tracking_data
-            .as_ref()
-            .ok_or(HintError::NoneApTrackingData)?;
+        let var_ap_trackig = hint_reference.ap_tracking_data.as_ref()?;
 
-        apply_ap_tracking_correction(&vm.get_ap(), var_ap_trackig, hint_ap_tracking)?
+        apply_ap_tracking_correction(vm.get_ap(), var_ap_trackig, hint_ap_tracking)?
     };
 
     if offset.is_negative() && base_addr.offset < offset.unsigned_abs() as usize {
-        return Err(HintError::FailedToGetIds);
+        return None;
     }
 
     if *deref {
-        Ok(vm
-            .get_maybe(&(base_addr + *offset))
-            .map_err(|_| HintError::FailedToGetIds)?
-            .ok_or(HintError::FailedToGetIds)?)
+        vm.get_maybe(&(base_addr + *offset).ok()?)
     } else {
-        Ok((base_addr + *offset).into())
+        Some((base_addr + *offset).ok()?.into())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::stdlib::collections::HashMap;
+
     use crate::{
         relocatable,
         utils::test_utils::*,
-        vm::{
-            errors::memory_errors::MemoryError, vm_core::VirtualMachine, vm_memory::memory::Memory,
-        },
+        vm::{vm_core::VirtualMachine, vm_memory::memory::Memory},
     };
-    use felt::NewFelt;
+    use assert_matches::assert_matches;
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_integer_from_reference_with_immediate_value() {
         let mut vm = vm!();
-        vm.memory = memory![((1, 0), 0)];
+        vm.segments = segments![((1, 0), 0)];
         let mut hint_ref = HintReference::new(0, 0, false, true);
-        hint_ref.offset1 = OffsetValue::Immediate(Felt::new(2));
+        hint_ref.offset1 = OffsetValue::Immediate(Felt252::new(2));
 
         assert_eq!(
             get_integer_from_reference(&vm, &hint_ref, &ApTracking::new())
                 .expect("Unexpected get integer fail")
                 .into_owned(),
-            Felt::new(2)
+            Felt252::new(2)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn get_offset_value_reference_valid() {
+        let mut vm = vm!();
+        vm.segments = segments![((1, 0), 0)];
+        let mut hint_ref = HintReference::new(0, 0, false, true);
+        hint_ref.offset1 = OffsetValue::Reference(Register::FP, 2_i32, false);
+
+        assert_matches!(
+            get_offset_value_reference(&vm, &hint_ref, &ApTracking::new(), &hint_ref.offset1),
+            Some(x) if x == mayberelocatable!(1, 2)
+        );
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn get_offset_value_reference_invalid() {
+        let mut vm = vm!();
+        vm.segments = segments![((1, 0), 0)];
+        let mut hint_ref = HintReference::new(0, 0, false, true);
+        hint_ref.offset1 = OffsetValue::Reference(Register::FP, -2_i32, false);
+
+        assert_matches!(
+            get_offset_value_reference(&vm, &hint_ref, &ApTracking::new(), &hint_ref.offset1),
+            None
+        );
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_ptr_from_reference_short_path() {
         let mut vm = vm!();
-        vm.memory = memory![((1, 0), (2, 0))];
+        vm.segments = segments![((1, 0), (2, 0))];
 
-        assert_eq!(
+        assert_matches!(
             get_ptr_from_reference(
                 &vm,
                 &HintReference::new(0, 0, false, false),
                 &ApTracking::new()
             ),
-            Ok(relocatable!(1, 0))
+            Ok(x) if x == relocatable!(1, 0)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_ptr_from_reference_with_dereference() {
         let mut vm = vm!();
-        vm.memory = memory![((1, 0), (3, 0))];
+        vm.segments = segments![((1, 0), (3, 0))];
 
-        assert_eq!(
+        assert_matches!(
             get_ptr_from_reference(
                 &vm,
                 &HintReference::new(0, 0, false, true),
                 &ApTracking::new()
             ),
-            Ok(relocatable!(3, 0))
+            Ok(x) if x == relocatable!(3, 0)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_ptr_from_reference_with_dereference_and_imm() {
         let mut vm = vm!();
-        vm.memory = memory![((1, 0), (4, 0))];
+        vm.segments = segments![((1, 0), (4, 0))];
         let mut hint_ref = HintReference::new(0, 0, true, false);
         hint_ref.offset2 = OffsetValue::Value(2);
 
-        assert_eq!(
+        assert_matches!(
             get_ptr_from_reference(&vm, &hint_ref, &ApTracking::new()),
-            Ok(relocatable!(4, 2))
+            Ok(x) if x == relocatable!(4, 2)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn compute_addr_from_reference_no_regiter_in_reference() {
         let mut vm = vm!();
-        vm.memory = memory![((1, 0), (4, 0))];
+        vm.segments = segments![((1, 0), (4, 0))];
         let mut hint_reference = HintReference::new(0, 0, false, false);
-        hint_reference.offset1 = OffsetValue::Immediate(Felt::new(2_i32));
+        hint_reference.offset1 = OffsetValue::Immediate(Felt252::new(2_i32));
 
-        assert_eq!(
-            compute_addr_from_reference(&hint_reference, &vm, &ApTracking::new()),
-            Err(HintError::NoRegisterInReference)
-        );
+        assert!(compute_addr_from_reference(&hint_reference, &vm, &ApTracking::new()).is_none());
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn compute_addr_from_reference_failed_to_get_ids() {
         let mut vm = vm!();
-        vm.memory = memory![((1, 0), 4)];
+        vm.segments = segments![((1, 0), 4)];
         // vm.run_context.fp = -1;
         let mut hint_reference = HintReference::new(0, 0, false, false);
         hint_reference.offset1 = OffsetValue::Reference(Register::FP, -1, true);
 
-        assert_eq!(
+        assert_matches!(
             compute_addr_from_reference(&hint_reference, &vm, &ApTracking::new()),
-            Err(HintError::FailedToGetIds)
+            None
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn tracking_correction_valid() {
+        let mut ref_ap_tracking = ApTracking::new();
+        ref_ap_tracking.group = 1;
+        let mut hint_ap_tracking = ApTracking::new();
+        hint_ap_tracking.group = 1;
+
+        assert_matches!(
+            apply_ap_tracking_correction(relocatable!(1, 0), &ref_ap_tracking, &hint_ap_tracking),
+            Some(relocatable!(1, 0))
+        );
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn tracking_correction_invalid_group() {
         let mut ref_ap_tracking = ApTracking::new();
         ref_ap_tracking.group = 1;
         let mut hint_ap_tracking = ApTracking::new();
         hint_ap_tracking.group = 2;
 
-        assert_eq!(
-            apply_ap_tracking_correction(&relocatable!(1, 0), &ref_ap_tracking, &hint_ap_tracking),
-            Err(HintError::InvalidTrackingGroup(1, 2))
-        );
+        assert!(apply_ap_tracking_correction(
+            relocatable!(1, 0),
+            &ref_ap_tracking,
+            &hint_ap_tracking
+        )
+        .is_none());
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_maybe_relocatable_from_reference_valid() {
         let mut vm = vm!();
-        vm.memory = memory![((1, 0), (0, 0))];
+        vm.segments = segments![((1, 0), (0, 0))];
         let hint_ref = HintReference::new_simple(0);
-        assert_eq!(
+        assert_matches!(
             get_maybe_relocatable_from_reference(&vm, &hint_ref, &ApTracking::new()),
-            Ok(mayberelocatable!(0, 0))
+            Some(x) if x == mayberelocatable!(0, 0)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_maybe_relocatable_from_reference_invalid() {
         let mut vm = vm!();
-        vm.memory = Memory::new();
+        vm.segments.memory = Memory::new();
         let hint_ref = HintReference::new_simple(0);
-        assert_eq!(
+        assert_matches!(
             get_maybe_relocatable_from_reference(&vm, &hint_ref, &ApTracking::new()),
-            Err(HintError::FailedToGetIds)
+            None
         );
     }
 }

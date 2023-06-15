@@ -25,11 +25,11 @@ func main() {
     alloc_locals;
     let (felt_array: felt*) = alloc();
 
-    fill_array(felt_array, 10001, 0);
+    fill_array(felt_array, 400001, 0);
 
-    let (index_1) = search(10000, felt_array, 0, 10001);
-    assert index_1 = 10000;
-    let (index_2) = search(5000, felt_array, 0, 10001);
-    assert index_2 = 5000;
+    let (index_1) = search(400000, felt_array, 0, 400001);
+    assert index_1 = 400000;
+    let (index_2) = search(200000, felt_array, 0, 400001);
+    assert index_2 = 200000;
     ret;
 }

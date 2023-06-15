@@ -23,7 +23,7 @@ func fill_array(array: felt*, base: felt, step: felt, array_length: felt, iterat
 
 func main() {
     alloc_locals;
-    tempvar array_length = 50000;
+    tempvar array_length = 250000;
     let (array_a: felt*) = alloc();
     let (array_b: felt*) = alloc();
     fill_array(array_a, 7, 3, array_length, 0);

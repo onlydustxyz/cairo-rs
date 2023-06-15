@@ -1,3 +1,5 @@
+use crate::stdlib::{any::Any, collections::HashMap, prelude::*};
+
 use crate::{
     hint_processor::{
         builtin_hint_processor::hint_utils::{
@@ -9,9 +11,8 @@ use crate::{
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
-use felt::Felt;
+use felt::Felt252;
 use num_traits::{One, Zero};
-use std::{any::Any, collections::HashMap};
 
 //Implements hint: memory[ap] = segments.add()
 pub fn add_segment(vm: &mut VirtualMachine) -> Result<(), HintError> {
@@ -57,7 +58,7 @@ pub fn memcpy_continue_copying(
     ap_tracking: &ApTracking,
 ) -> Result<(), HintError> {
     // get `n` variable from vm scope
-    let n = exec_scopes.get_ref::<Felt>("n")?;
+    let n = exec_scopes.get_ref::<Felt252>("n")?;
     // this variable will hold the value of `n - 1`
     let new_n = n - 1;
     // if it is positive, insert 1 in the address of `continue_copying`
@@ -65,7 +66,13 @@ pub fn memcpy_continue_copying(
     if new_n.is_zero() {
         insert_value_from_var_name("continue_copying", &new_n, vm, ids_data, ap_tracking)?;
     } else {
-        insert_value_from_var_name("continue_copying", Felt::one(), vm, ids_data, ap_tracking)?;
+        insert_value_from_var_name(
+            "continue_copying",
+            Felt252::one(),
+            vm,
+            ids_data,
+            ap_tracking,
+        )?;
     }
     exec_scopes.insert_value("n", new_n);
     Ok(())
@@ -74,21 +81,19 @@ pub fn memcpy_continue_copying(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        types::relocatable::MaybeRelocatable,
-        utils::test_utils::*,
-        vm::{
-            errors::{memory_errors::MemoryError, vm_errors::VirtualMachineError},
-            vm_memory::memory::Memory,
-        },
-    };
-    use felt::NewFelt;
+
+    use crate::utils::test_utils::*;
+    use assert_matches::assert_matches;
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_integer_from_var_name_valid() {
         let mut vm = vm!();
         // initialize memory segments
-        vm.segments.add(&mut vm.memory);
+        vm.segments.add();
 
         // initialize fp
         vm.run_context.fp = 1;
@@ -99,17 +104,18 @@ mod tests {
         let ids_data = ids_data![var_name];
 
         //Insert ids.prev_locs.exp into memory
-        vm.memory = memory![((1, 0), 10)];
+        vm.segments = segments![((1, 0), 10)];
 
         assert_eq!(
             get_integer_from_var_name(var_name, &vm, &ids_data, &ApTracking::default())
                 .unwrap()
                 .as_ref(),
-            &Felt::new(10)
+            &Felt252::new(10)
         );
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_integer_from_var_name_invalid_expected_integer() {
         let mut vm = vm!();
 
@@ -122,13 +128,12 @@ mod tests {
         let ids_data = ids_data![var_name];
 
         //Insert ids.variable into memory as a RelocatableValue
-        vm.memory = memory![((1, 0), (1, 1))];
+        vm.segments = segments![((1, 0), (1, 1))];
 
-        assert_eq!(
+        assert_matches!(
             get_integer_from_var_name(var_name, &vm, &ids_data, &ApTracking::default()),
-            Err(HintError::Internal(VirtualMachineError::ExpectedInteger(
-                MaybeRelocatable::from((1, 0))
-            )))
+            Err(HintError::IdentifierNotInteger(x,y
+            )) if x == var_name && y == (1,0).into()
         );
     }
 }

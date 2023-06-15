@@ -41,7 +41,7 @@ fn main() {
         "main",
         false,
         false,
-        "all",
+        "all_cairo",
         false,
         &mut hint_processor,
     )

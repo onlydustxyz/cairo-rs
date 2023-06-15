@@ -10,8 +10,9 @@ const ALL_ONES = 2 ** 251 - 1;
 // Pack the different instances with offsets of 35 bits. This is the maximal possible offset for
 // 7 32-bit words and it allows space for carry bits in integer addition operations (up to
 // 8 summands).
-const SHIFTS = 1 + 2 ** 35 + 2 ** (35 * 2) + 2 ** (35 * 3) + 2 ** (35 * 4) + 2 ** (35 * 5) +
-    2 ** (35 * 6);
+const SHIFTS = 1 + 2 ** 35 + 2 ** (35 * 2) + 2 ** (35 * 3) + 2 ** (35 * 4) + 2 ** (35 * 5) + 2 ** (
+    35 * 6
+);
 
 // Given an array of size 16, extends it to the message schedule array (of size 64) by writing
 // 48 more values.
@@ -426,8 +427,9 @@ func _finalize_sha256_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     tempvar x6 = sha256_ptr[6 * SHA256_INSTANCE_SIZE];
     assert [range_check_ptr + 12] = x6;
     assert [range_check_ptr + 13] = MAX_VALUE - x6;
-    assert message[0] = x0 + 2 ** 35 * x1 + 2 ** (35 * 2) * x2 + 2 ** (35 * 3) * x3 +
-        2 ** (35 * 4) * x4 + 2 ** (35 * 5) * x5 + 2 ** (35 * 6) * x6;
+    assert message[0] = x0 + 2 ** 35 * x1 + 2 ** (35 * 2) * x2 + 2 ** (35 * 3) * x3 + 2 ** (
+        35 * 4
+    ) * x4 + 2 ** (35 * 5) * x5 + 2 ** (35 * 6) * x6;
 
     tempvar message = message + 1;
     tempvar sha256_ptr = sha256_ptr + 1;
@@ -464,8 +466,9 @@ func _finalize_sha256_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     tempvar x6 = sha256_ptr[6 * SHA256_INSTANCE_SIZE];
     assert [range_check_ptr + 12] = x6;
     assert [range_check_ptr + 13] = MAX_VALUE - x6;
-    assert input_state[0] = x0 + 2 ** 35 * x1 + 2 ** (35 * 2) * x2 + 2 ** (35 * 3) * x3 +
-        2 ** (35 * 4) * x4 + 2 ** (35 * 5) * x5 + 2 ** (35 * 6) * x6;
+    assert input_state[0] = x0 + 2 ** 35 * x1 + 2 ** (35 * 2) * x2 + 2 ** (35 * 3) * x3 + 2 ** (
+        35 * 4
+    ) * x4 + 2 ** (35 * 5) * x5 + 2 ** (35 * 6) * x6;
 
     tempvar input_state = input_state + 1;
     tempvar sha256_ptr = sha256_ptr + 1;
@@ -510,8 +513,9 @@ func _finalize_sha256_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     tempvar x6 = sha256_ptr[6 * SHA256_INSTANCE_SIZE];
     assert [range_check_ptr + 12] = x6;
     assert [range_check_ptr + 13] = MAX_VALUE - x6;
-    assert outputs[0] = x0 + 2 ** 35 * x1 + 2 ** (35 * 2) * x2 + 2 ** (35 * 3) * x3 +
-        2 ** (35 * 4) * x4 + 2 ** (35 * 5) * x5 + 2 ** (35 * 6) * x6;
+    assert outputs[0] = x0 + 2 ** 35 * x1 + 2 ** (35 * 2) * x2 + 2 ** (35 * 3) * x3 + 2 ** (
+        35 * 4
+    ) * x4 + 2 ** (35 * 5) * x5 + 2 ** (35 * 6) * x6;
 
     tempvar outputs = outputs + 1;
     tempvar sha256_ptr = sha256_ptr + 1;

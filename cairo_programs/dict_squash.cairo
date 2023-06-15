@@ -22,11 +22,8 @@ func main{range_check_ptr}() -> () {
     let (squashed_dict_start, squashed_dict_end) = dict_squash{range_check_ptr=range_check_ptr}(
         dict_start, dict_end
     );
-    assert squashed_dict_end[0] = DictAccess(
-        key=0, prev_value=1, new_value=4);
-    assert squashed_dict_end[1] = DictAccess(
-        key=1, prev_value=10, new_value=25);
-    assert squashed_dict_end[2] = DictAccess(
-        key=2, prev_value=-2, new_value=-16);
+    assert squashed_dict_end[0] = DictAccess(key=0, prev_value=1, new_value=4);
+    assert squashed_dict_end[1] = DictAccess(key=1, prev_value=10, new_value=25);
+    assert squashed_dict_end[2] = DictAccess(key=2, prev_value=-2, new_value=-16);
     return ();
 }

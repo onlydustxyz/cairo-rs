@@ -32,7 +32,6 @@ func evaluate_fib() {
     return ();
 }
 
-
 func main{range_check_ptr: felt}() {
     let x = 64;
     tempvar y = 64 * 64;

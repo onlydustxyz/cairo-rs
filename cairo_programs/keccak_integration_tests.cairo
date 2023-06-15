@@ -1,7 +1,8 @@
 %builtins range_check bitwise
 
 from starkware.cairo.common.keccak import unsafe_keccak, unsafe_keccak_finalize, KeccakState
-from starkware.cairo.common.cairo_keccak.keccak import keccak_add_uint256, keccak, finalize_keccak
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak, finalize_keccak
+from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
@@ -56,7 +57,7 @@ func test_integration{range_check_ptr: felt, bitwise_ptr: BitwiseBuiltin*}(iter:
     let (keccak_ptr: felt*) = alloc();
     let keccak_ptr_start = keccak_ptr;
 
-    let res_2: Uint256 = keccak{keccak_ptr=keccak_ptr}(data_3, 16);
+    let res_2: Uint256 = cairo_keccak{keccak_ptr=keccak_ptr}(data_3, 16);
 
     finalize_keccak(keccak_ptr_start=keccak_ptr_start, keccak_ptr_end=keccak_ptr);
 

@@ -2,19 +2,19 @@ pub(crate) const CELLS_PER_RANGE_CHECK: u32 = 1;
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct RangeCheckInstanceDef {
-    pub(crate) ratio: u32,
+    pub(crate) ratio: Option<u32>,
     pub(crate) n_parts: u32,
 }
 
 impl RangeCheckInstanceDef {
     pub(crate) fn default() -> Self {
         RangeCheckInstanceDef {
-            ratio: 8,
+            ratio: Some(8),
             n_parts: 8,
         }
     }
 
-    pub(crate) fn new(ratio: u32, n_parts: u32) -> Self {
+    pub(crate) fn new(ratio: Option<u32>, n_parts: u32) -> Self {
         RangeCheckInstanceDef { ratio, n_parts }
     }
 
@@ -31,31 +31,38 @@ impl RangeCheckInstanceDef {
 mod tests {
     use super::*;
 
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
+
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_range_check_units_per_builtin() {
         let builtin_instance = RangeCheckInstanceDef::default();
         assert_eq!(builtin_instance._range_check_units_per_builtin(), 8);
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_cells_per_builtin() {
         let builtin_instance = RangeCheckInstanceDef::default();
         assert_eq!(builtin_instance._cells_per_builtin(), 1);
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn test_new() {
         let builtin_instance = RangeCheckInstanceDef {
-            ratio: 10,
+            ratio: Some(10),
             n_parts: 10,
         };
-        assert_eq!(RangeCheckInstanceDef::new(10, 10), builtin_instance);
+        assert_eq!(RangeCheckInstanceDef::new(Some(10), 10), builtin_instance);
     }
 
     #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn test_default() {
         let builtin_instance = RangeCheckInstanceDef {
-            ratio: 8,
+            ratio: Some(8),
             n_parts: 8,
         };
         assert_eq!(RangeCheckInstanceDef::default(), builtin_instance);

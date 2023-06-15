@@ -2,8 +2,12 @@
 **/.DS_Store
 **/*.svg
 **/*.json
+!hint_accountant/whitelists/*.json
 !cairo_programs/manually_compiled/*.json
 **/*.trace
 **/*.memory
 **/*.swp
 bench/results
+.python-version
+cairo-rs-env/*
+cairo-rs-pypy-env/*
