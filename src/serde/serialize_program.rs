@@ -25,9 +25,6 @@ pub fn serialize_value_address<S: Serializer>(
 
 #[cfg(test)]
 mod tests {
-
-    use std::io::Write;
-
     use crate::serde::deserialize_program::OffsetValue;
     use crate::serde::deserialize_program::ProgramJson;
     use crate::serde::deserialize_program::ValueAddress;
@@ -46,10 +43,6 @@ mod tests {
             include_bytes!("../../cairo_programs/manually_compiled/valid_program_c.json");
         let program: ProgramJson = serde_json::from_slice(program_bytes).unwrap();
         let test_bytes = serde_json::to_vec(&program).unwrap();
-        std::fs::File::create("foo.json")
-            .unwrap()
-            .write_all(&test_bytes)
-            .unwrap();
         let test_value: ProgramJson = serde_json::from_slice(&test_bytes).unwrap();
 
         pretty_assertions::assert_eq!(program, test_value)

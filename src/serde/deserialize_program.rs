@@ -64,6 +64,8 @@ pub struct ProgramJson {
     pub reference_manager: ReferenceManager,
     pub attributes: Vec<Attribute>,
     pub debug_info: Option<DebugInfo>,
+    pub main_scope: String,
+    pub compiler_version: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -528,6 +530,8 @@ pub fn parse_program(program: Program) -> ProgramJson {
             .map(|instruction_locations| DebugInfo {
                 instruction_locations,
             }),
+        main_scope: String::default(),
+        compiler_version: String::default(),
     }
 }
 
@@ -546,7 +550,7 @@ mod tests {
         assert_eq!("", format!("{:}", OffsetValue::Immediate(Felt252::zero())));
         assert_eq!("", format!("{:}", OffsetValue::Value(0)));
         assert_eq!("1", format!("{:}", OffsetValue::Immediate(Felt252::one())));
-        assert_eq!("-2", format!("{:}", OffsetValue::Value(-2)));
+        assert_eq!("(-2)", format!("{:}", OffsetValue::Value(-2)));
         assert_eq!("2", format!("{:}", OffsetValue::Value(2)));
         assert_eq!(
             "[ap]",
@@ -561,7 +565,7 @@ mod tests {
             format!("{:}", OffsetValue::Reference(Register::AP, -2, true))
         );
         assert_eq!(
-            "ap",
+            "ap - 0",
             format!("{:}", OffsetValue::Reference(Register::AP, 0, false))
         );
         assert_eq!(
@@ -586,7 +590,7 @@ mod tests {
             format!("{:}", OffsetValue::Reference(Register::FP, -2, true))
         );
         assert_eq!(
-            "fp",
+            "fp - 0",
             format!("{:}", OffsetValue::Reference(Register::FP, 0, false))
         );
         assert_eq!(
@@ -673,6 +677,8 @@ mod tests {
         let valid_json = r#"
             {
                 "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
+                "main_scope": "__main__",
+                "compiler_version": "0.11.0",
                 "attributes": [],
                 "debug_info": {
                     "instruction_locations": {}
@@ -1166,6 +1172,8 @@ mod tests {
         let valid_json = r#"
             {
                 "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
+                "main_scope": "__main__",
+                "compiler_version": "0.11.0",
                 "attributes": [],
                 "debug_info": {
                     "instruction_locations": {}
@@ -1264,7 +1272,9 @@ mod tests {
                 "reference_manager": {
                     "references": [
                     ]
-                }
+                },
+                "main_scope": "__main__",
+                "compiler_version": "0.11.0"
             }"#;
 
         let program_json: ProgramJson = serde_json::from_str(valid_json).unwrap();
@@ -1369,7 +1379,9 @@ mod tests {
                 "reference_manager": {
                     "references": [
                     ]
-                }
+                },
+                "main_scope": "__main__",
+                "compiler_version": "0.11.0"
             }"#;
 
         let program_json: ProgramJson = serde_json::from_str(valid_json).unwrap();
@@ -1474,7 +1486,9 @@ mod tests {
                 "reference_manager": {
                     "references": [
                     ]
-                }
+                },
+                "main_scope": "__main__",
+                "compiler_version": "0.11.0"
             }"#;
 
         let program_json: ProgramJson = serde_json::from_str(valid_json).unwrap();
