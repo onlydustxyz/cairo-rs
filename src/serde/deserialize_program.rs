@@ -140,6 +140,7 @@ pub struct Attribute {
     pub end_pc: usize,
     pub value: String,
     pub flow_tracking_data: Option<FlowTrackingData>,
+    pub accessible_scopes: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -1292,6 +1293,11 @@ mod tests {
                     },
                     reference_ids: HashMap::new(),
                 }),
+                accessible_scopes: vec![
+                    "openzeppelin.security.safemath.library".to_string(),
+                    "openzeppelin.security.safemath.library.SafeUint256".to_string(),
+                    "openzeppelin.security.safemath.library.SafeUint256.add".to_string(),
+                ],
             },
             Attribute {
                 name: String::from("error_message"),
@@ -1305,6 +1311,11 @@ mod tests {
                     },
                     reference_ids: HashMap::new(),
                 }),
+                accessible_scopes: vec![
+                    "openzeppelin.security.safemath.library".to_string(),
+                    "openzeppelin.security.safemath.library.SafeUint256".to_string(),
+                    "openzeppelin.security.safemath.library.SafeUint256.sub_le".to_string(),
+                ],
             },
         ];
 

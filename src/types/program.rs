@@ -680,6 +680,11 @@ mod tests {
                 },
                 reference_ids: HashMap::new(),
             }),
+            accessible_scopes: vec![
+                "openzeppelin.security.safemath.library".to_string(),
+                "openzeppelin.security.safemath.library.SafeUint256".to_string(),
+                "openzeppelin.security.safemath.library.SafeUint256.add".to_string(),
+            ],
         }];
 
         let data: Vec<MaybeRelocatable> = vec![
