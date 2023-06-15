@@ -299,6 +299,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -311,6 +315,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -474,6 +482,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -486,6 +498,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -544,6 +560,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -556,6 +576,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -603,6 +627,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: Some(vec![]),
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -614,6 +642,10 @@ mod tests {
                 full_name: Some("__main__.main.Args".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -625,6 +657,10 @@ mod tests {
                 full_name: Some("__main__.main.ImplicitArgs".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -636,6 +672,10 @@ mod tests {
                 full_name: Some("__main__.main.Return".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -647,6 +687,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -707,6 +751,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: Some(vec![]),
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -718,6 +766,10 @@ mod tests {
                 full_name: Some("__main__.main.Args".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -729,6 +781,10 @@ mod tests {
                 full_name: Some("__main__.main.ImplicitArgs".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -740,6 +796,10 @@ mod tests {
                 full_name: Some("__main__.main.Return".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -751,6 +811,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 

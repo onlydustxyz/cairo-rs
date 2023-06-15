@@ -125,6 +125,14 @@ pub struct Identifier {
     pub members: Option<HashMap<String, Member>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cairo_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decorators: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub destination: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub references: Option<Vec<Reference>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1091,6 +1099,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: Some(vec![]),
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -1104,6 +1116,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -1115,6 +1131,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: Some("starkware.cairo.common.math.unsigned_div_rem".to_string()),
+                references: None,
             },
         );
         identifiers.insert(
@@ -1128,6 +1148,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -1139,6 +1163,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -1150,6 +1178,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -1161,6 +1193,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
