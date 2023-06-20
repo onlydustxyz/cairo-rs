@@ -101,17 +101,17 @@ COMPILED_SIERRA_CONTRACTS:=$(patsubst $(CAIRO_1_CONTRACTS_TEST_DIR)/%.cairo, $(C
 COMPILED_CASM_CONTRACTS:= $(patsubst $(CAIRO_1_CONTRACTS_TEST_DIR)/%.sierra, $(CAIRO_1_CONTRACTS_TEST_DIR)/%.casm, $(COMPILED_SIERRA_CONTRACTS))
 
 $(CAIRO_1_CONTRACTS_TEST_DIR)/%.sierra: $(CAIRO_1_CONTRACTS_TEST_DIR)/%.cairo
-	$(STARKNET_COMPILE) --allowed-libfuncs-list-name experimental_v0.1.0 $< $@
+	$(STARKNET_COMPILE) --allowed-libfuncs-list-name all $< $@
 
 $(CAIRO_1_CONTRACTS_TEST_DIR)/%.casm: $(CAIRO_1_CONTRACTS_TEST_DIR)/%.sierra
-	$(STARKNET_SIERRA_COMPILE) --allowed-libfuncs-list-name experimental_v0.1.0 $< $@
+	$(STARKNET_SIERRA_COMPILE) --allowed-libfuncs-list-name all $< $@
 
 cairo-repo-dir = cairo
 
 build-cairo-1-compiler: | $(cairo-repo-dir)
 
 $(cairo-repo-dir):
-	git clone --depth 1 -b v1.1.0 https://github.com/starkware-libs/cairo.git
+	git clone --depth 1 -b no_std-support https://github.com/keep-starknet-strange/cairo.git
 	cd cairo; cargo b --release --bin starknet-compile --bin starknet-sierra-compile
 
 cargo-deps:
