@@ -13,7 +13,7 @@ use crate::{
     },
 };
 #[cfg(feature = "cairo-1-hints")]
-use cairo_lang_starknet::casm_contract_class::CasmContractClass;
+use cairo_lang_casm_contract_class::CasmContractClass;
 use felt::{Felt252, PRIME_STR};
 
 #[cfg(feature = "std")]
