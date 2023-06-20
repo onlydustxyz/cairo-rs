@@ -232,8 +232,7 @@ dependencies = [
 [[package]]
 name = "cairo-felt"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb1ceee24a02475932277c5354d5acf8dcc373944af8e7527de258b5effbea42"
+source = "git+https://github.com/keep-starknet-strange/cairo-rs?branch=no_std-support-with-cairo-1#a4865bf0a0885191dce50ea22ae40b4d3f8998cc"
 dependencies = [
  "lazy_static",
  "num-bigint",
@@ -245,7 +244,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-casm"
 version = "2.0.0-rc2"
-source = "git+https://github.com/keep-starknet-strange/cairo?branch=no_std-support#2d5c401e11c88855cd4204c88b83a5d8668f30e7"
+source = "git+https://github.com/keep-starknet-strange/cairo?branch=no_std-support#c1dcc9dbf85efcdde020d14cc1cfa64d6640d2ee"
 dependencies = [
  "cairo-lang-utils",
  "hashbrown 0.14.0",
@@ -260,7 +259,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-casm-contract-class"
 version = "2.0.0-rc2"
-source = "git+https://github.com/keep-starknet-strange/cairo?branch=no_std-support#2d5c401e11c88855cd4204c88b83a5d8668f30e7"
+source = "git+https://github.com/keep-starknet-strange/cairo?branch=no_std-support#c1dcc9dbf85efcdde020d14cc1cfa64d6640d2ee"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-utils",
@@ -271,9 +270,9 @@ dependencies = [
 [[package]]
 name = "cairo-lang-utils"
 version = "2.0.0-rc2"
-source = "git+https://github.com/keep-starknet-strange/cairo?branch=no_std-support#2d5c401e11c88855cd4204c88b83a5d8668f30e7"
+source = "git+https://github.com/keep-starknet-strange/cairo?branch=no_std-support#c1dcc9dbf85efcdde020d14cc1cfa64d6640d2ee"
 dependencies = [
- "cairo-felt 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cairo-felt 0.6.0 (git+https://github.com/keep-starknet-strange/cairo-rs?branch=no_std-support-with-cairo-1)",
  "hashbrown 0.14.0",
  "indexmap 2.0.0-pre",
  "itertools",
@@ -1152,9 +1151,9 @@ checksum = "4d5d9eb14b174ee9aa2ef96dc2b94637a2d4b6e7cb873c7e171f0c20c6cf3eac"
 
 [[package]]
 name = "parity-scale-codec"
-version = "3.6.0"
+version = "3.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "430d26d62e66cbff6ae144e8eebd43c0235922dec7e3aa0d2016c32d4575bf45"
+checksum = "2287753623c76f953acd29d15d8100bcab84d29db78fb6f352adb3c53e83b967"
 dependencies = [
  "arrayvec",
  "byte-slice-cast",
@@ -1163,9 +1162,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec-derive"
-version = "3.6.0"
+version = "3.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1620b1e3fc72ebaee01ff56fca838bab537c5d093a18b3549c3bbea374aa0b6"
+checksum = "2b6937b5e67bfba3351b87b040d48352a2fcb6ad72f81855412ce97b45c8f110"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",

@@ -55,7 +55,7 @@ thiserror-no-std = { version = "2.0.2", default-features = false }
 parse-hyperlinks = { package = "cairo-take_until_unbalanced", path = "./deps/parse-hyperlinks", version = "0.29.0", default-features = false, features = [
     "alloc",
 ] }
-felt = { package = "cairo-felt", path = "./felt", version = "0.6.0", default-features = false, features = [
+felt = { package = "cairo-felt", path = "./felt", default-features = false, features = [
     "alloc",
 ] }
 bitvec = { version = "1", default-features = false, features = ["alloc"] }

@@ -15,7 +15,7 @@ use nom::IResult;
 /// ```
 /// use nom::bytes::complete::tag;
 /// use nom::sequence::delimited;
-/// use parse_hyperlinks::take_until_unbalanced;
+/// use cairo_take_until_unbalanced::take_until_unbalanced;
 ///
 /// let mut parser = delimited(tag("<"), take_until_unbalanced('<', '>'), tag(">"));
 /// assert_eq!(parser("<<inside>inside>abc"), Ok(("abc", "<inside>inside")));

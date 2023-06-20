@@ -63,10 +63,10 @@ pub(crate) trait FeltOps {
     /// # use num_bigint::BigInt;
     /// # use num_traits::Bounded;
     /// let positive = Felt252::new(5);
-    /// assert_eq!(positive.to_bigint(), Into::<num_bigint::BigInt>::into(5));
+    /// assert_eq!(positive.to_signed_felt(), Into::<num_bigint::BigInt>::into(5));
     ///
     /// let negative = Felt252::max_value();
-    /// assert_eq!(negative.to_bigint(), Into::<num_bigint::BigInt>::into(-1));
+    /// assert_eq!(negative.to_signed_felt(), Into::<num_bigint::BigInt>::into(-1));
     /// ```
     fn to_signed_felt(&self) -> BigInt;
 
