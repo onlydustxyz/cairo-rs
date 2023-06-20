@@ -57,8 +57,9 @@ pub(crate) fn get_ptr(
     Ok((vm.get_relocatable(cell_ref_to_relocatable(cell, vm)?)? + offset)?)
 }
 
+#[cfg_attr(not(feature = "std"), allow(dead_code))]
 pub(crate) fn as_relocatable(
-    vm: &mut VirtualMachine,
+    vm: &VirtualMachine,
     value: &ResOperand,
 ) -> Result<Relocatable, HintError> {
     let (base, offset) = extract_buffer(value)?;
@@ -96,6 +97,7 @@ pub(crate) fn res_operand_get_val(
     }
 }
 
+#[cfg_attr(not(feature = "std"), allow(dead_code))]
 pub(crate) fn as_cairo_short_string(value: &Felt252) -> Option<String> {
     let mut as_string = String::default();
     let mut is_end = false;

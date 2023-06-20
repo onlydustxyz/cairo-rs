@@ -605,8 +605,8 @@ fn uint512_div_mod_test() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn fibonacci_with_run_resources_ok() {
     let program_data = include_bytes!("../../../cairo_programs/cairo-1-contracts/fib.casm");
-    let mut resources = RunResources::new(621);
-    // Program takes 621 steps
+    let mut resources = RunResources::new(618);
+    // Program takes 618 steps
     assert_matches!(
         run_cairo_1_entrypoint_with_run_resources(
             program_data.as_slice(),
@@ -625,7 +625,7 @@ fn fibonacci_with_run_resources_ok() {
 fn fibonacci_with_run_resources_2_ok() {
     let program_data = include_bytes!("../../../cairo_programs/cairo-1-contracts/fib.casm");
     let mut resources = RunResources::new(1000);
-    // Program takes 621 steps
+    // Program takes 618 steps
     assert_matches!(
         run_cairo_1_entrypoint_with_run_resources(
             program_data.as_slice(),
@@ -635,7 +635,7 @@ fn fibonacci_with_run_resources_2_ok() {
         ),
         Ok(x) if x == [10946_usize.into()]
     );
-    assert_eq!(resources, RunResources::new(1000 - 621));
+    assert_eq!(resources, RunResources::new(1000 - 618));
 }
 
 #[test]

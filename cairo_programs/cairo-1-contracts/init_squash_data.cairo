@@ -1,12 +1,15 @@
-#[contract]
+#[starknet::contract]
 mod TestDict {
     use dict::Felt252DictTrait;
     use nullable::NullableTrait;
     use traits::Index;
 
-    #[external]
-    fn test_dict_init(test_value: felt252) -> felt252 {
-        let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn test_dict_init(ref self: ContractState, test_value: felt252) -> felt252 {
+        let mut dict = felt252_dict_new::<felt252>();
 
         dict.insert(10, test_value);
         let (entry, value) = dict.entry(10);

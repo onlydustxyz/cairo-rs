@@ -1,13 +1,17 @@
-#[contract]
+#[starknet::contract]
 mod AllocSegment {
     use dict::{Felt252DictTrait, Felt252DictEntryTrait};
     use traits::Index;
     use array::{ArrayTrait, SpanTrait};
 
-    #[external]
-    fn alloc_segment() {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn alloc_segment(self: @ContractState) {
         // generates hint AllocSegment for felt252 dict when compiled to casm
-        let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+        let mut dict = felt252_dict_new::<felt252>();
+
         dict.squash();
 
         // generates hint AllocSegment for array
@@ -15,6 +19,6 @@ mod AllocSegment {
 
         arr.append(10);
         assert(*arr[0] == 10, 'array[0] == 10');
-  }
+    }
 }
-        
+

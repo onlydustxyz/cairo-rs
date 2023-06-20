@@ -1,5 +1,5 @@
-#[contract]
-mod RandomEcPoint{
+#[starknet::contract]
+mod RandomEcPoint {
     use option::OptionTrait;
     use ec::ec_state_init;
     use ec::ec_state_add;
@@ -8,9 +8,12 @@ mod RandomEcPoint{
     use ec::ec_point_non_zero;
     use ec::ec_point_unwrap;
 
+    #[storage]
+    struct Storage {}
+
     // Test taken from https://github.com/starkware-libs/cairo/blob/a0ead7c0b8e297d281c7213151cd43ac11de5042/corelib/src/test/ec_test.cairo#L17
-    #[external]
-    fn random_ec_point() -> felt252{
+    #[external(v0)]
+    fn random_ec_point(ref self: ContractState) -> felt252 {
         let p = ec_point_from_x(1).unwrap();
         let p_nz = ec_point_non_zero(p);
 
@@ -23,5 +26,4 @@ mod RandomEcPoint{
         assert(qx == 1, 'bad finalize x');
         qx
     }
-
 }
