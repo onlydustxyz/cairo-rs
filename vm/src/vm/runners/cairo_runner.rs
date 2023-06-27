@@ -4240,6 +4240,10 @@ mod tests {
                     full_name: None,
                     members: None,
                     cairo_type: None,
+                    decorators: None,
+                    size: None,
+                    destination: None,
+                    references: None
                 },
             )]
             .into_iter()
@@ -4268,6 +4272,10 @@ mod tests {
                         full_name: None,
                         members: None,
                         cairo_type: None,
+                        decorators: None,
+                        size: None,
+                        destination: None,
+                        references: None
                     },
                 ),
                 (
@@ -4279,6 +4287,10 @@ mod tests {
                         full_name: None,
                         members: None,
                         cairo_type: None,
+                        decorators: None,
+                        size: None,
+                        destination: None,
+                        references: None
                     },
                 ),
             ]
@@ -4308,6 +4320,10 @@ mod tests {
                     full_name: None,
                     members: None,
                     cairo_type: None,
+                    decorators: None,
+                    size: None,
+                    destination: None,
+                    references: None
                 },
             )]
             .into_iter()

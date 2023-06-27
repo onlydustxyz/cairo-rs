@@ -7,7 +7,9 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(warnings)]
-#![forbid(unsafe_code)]
+// We need unsafe code in scale codec feature to have performant type conversions with mem::transmute.
+// All the transmutes are safe because we transmute from usize to [u8; mem::size_of::<usize>()].
+#![cfg_attr(not(feature = "parity-scale-codec"), forbid(unsafe_code))]
 #![cfg_attr(any(target_arch = "wasm32", not(feature = "std")), no_std)]
 
 #[cfg(feature = "std")]
@@ -36,7 +38,9 @@ mod stdlib {
             boxed::Box,
             clone::Clone,
             cmp::{Eq, PartialEq, Reverse},
+            fmt,
             iter::IntoIterator,
+            str::FromStr,
             string::{String, ToString},
             vec::Vec,
         };

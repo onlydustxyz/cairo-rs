@@ -13,6 +13,8 @@ use crate::vm::vm_core::VirtualMachine;
 
 use super::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData;
 use felt::Felt252;
+#[cfg(feature = "parity-scale-codec")]
+use parity_scale_codec::{Decode, Encode};
 
 pub trait HintProcessor {
     //Executes the hint which's data is provided by a dynamic structure previously created by compile_hint
@@ -80,9 +82,51 @@ fn get_ids_data(
 pub struct HintReference {
     pub offset1: OffsetValue,
     pub offset2: OffsetValue,
+    pub pc: Option<usize>,
     pub dereference: bool,
     pub ap_tracking_data: Option<ApTracking>,
     pub cairo_type: Option<String>,
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl Encode for HintReference {
+    fn encode(&self) -> Vec<u8> {
+        let val = self.clone();
+        (
+            val.offset1,
+            val.offset2,
+            val.pc.map(|v| v as u64),
+            val.dereference,
+            val.ap_tracking_data,
+            val.cairo_type,
+        )
+            .encode()
+    }
+}
+#[cfg(feature = "parity-scale-codec")]
+impl Decode for HintReference {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
+        let res = <(
+            OffsetValue,
+            OffsetValue,
+            Option<u64>,
+            bool,
+            Option<ApTracking>,
+            Option<String>,
+        )>::decode(input)
+        .unwrap();
+
+        Ok(HintReference {
+            offset1: res.0,
+            offset2: res.1,
+            pc: res.2.map(|v| v as usize),
+            dereference: res.3,
+            ap_tracking_data: res.4,
+            cairo_type: res.5,
+        })
+    }
 }
 
 impl HintReference {
@@ -90,6 +134,7 @@ impl HintReference {
         HintReference {
             offset1: OffsetValue::Reference(Register::FP, offset1, false),
             offset2: OffsetValue::Value(0),
+            pc: None,
             ap_tracking_data: None,
             dereference: true,
             cairo_type: None,
@@ -100,6 +145,7 @@ impl HintReference {
         HintReference {
             offset1: OffsetValue::Reference(Register::FP, offset1, inner_dereference),
             offset2: OffsetValue::Value(offset2),
+            pc: None,
             ap_tracking_data: None,
             dereference,
             cairo_type: None,
@@ -112,6 +158,7 @@ impl From<Reference> for HintReference {
         HintReference {
             offset1: reference.value_address.offset1.clone(),
             offset2: reference.value_address.offset2.clone(),
+            pc: reference.pc,
             dereference: reference.value_address.dereference,
             // only store `ap` tracking data if the reference is referred to it
             ap_tracking_data: match (

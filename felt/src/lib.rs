@@ -27,7 +27,8 @@ use core::{
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::{string::String, vec::Vec};
-
+#[cfg(feature = "parity-scale-codec")]
+use parity_scale_codec::{Decode, Encode};
 pub const PRIME_STR: &str = "0x800000000000011000000000000000000000000000000000000000000000001"; // in decimal, this is equal to 3618502788666131213697322783095070105623107215331596699973092056135872020481
 
 pub(crate) trait FeltOps {
@@ -109,6 +110,7 @@ macro_rules! felt_str {
 pub struct ParseFeltError;
 
 #[derive(Eq, Hash, PartialEq, PartialOrd, Ord, Clone, Deserialize, Default, Serialize)]
+#[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 pub struct Felt252 {
     value: FeltBigInt<FIELD_HIGH, FIELD_LOW>,
 }

@@ -526,6 +526,7 @@ mod test {
             end_pc: 5,
             value: String::from("Invalid hash"),
             flow_tracking_data: None,
+            accessible_scopes: vec![],
         }];
         let program = program!(error_message_attributes = attributes,);
         let runner = cairo_runner!(program);
@@ -545,6 +546,7 @@ mod test {
             end_pc: 5,
             value: String::from("Invalid hash"),
             flow_tracking_data: None,
+            accessible_scopes: vec![],
         }];
         let program = program!(error_message_attributes = attributes,);
         let runner = cairo_runner!(program);

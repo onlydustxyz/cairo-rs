@@ -1,10 +1,12 @@
+use crate::vm::decoding::decoder::decode_instruction;
 use felt::Felt252;
 use num_traits::ToPrimitive;
+#[cfg(feature = "parity-scale-codec")]
+use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
-use crate::vm::decoding::decoder::decode_instruction;
-
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 pub enum Register {
     AP,
     FP,

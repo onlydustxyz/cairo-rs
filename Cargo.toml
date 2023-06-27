@@ -60,6 +60,8 @@ felt = { package = "cairo-felt", path = "./felt", default-features = false, feat
 ] }
 bitvec = { version = "1", default-features = false, features = ["alloc"] }
 
+parity-scale-codec = { version = "3.6.0", default-features = false }
+
 # Dependencies for cairo-1-hints feature
 cairo-lang-casm = { git = "https://github.com/keep-starknet-strange/cairo", branch = "no_std-support", default-features = false }
 cairo-lang-casm-contract-class = { git = "https://github.com/keep-starknet-strange/cairo", branch = "no_std-support", default-features = false }
@@ -67,6 +69,8 @@ cairo-lang-casm-contract-class = { git = "https://github.com/keep-starknet-stran
 # TODO: check these dependencies for wasm compatibility
 ark-ff = { version = "0.4.0-alpha.7", default-features = false }
 ark-std = { version = "0.3.0", default-features = false }
+
+pretty_assertions = "1.3.0"
 
 [profile.release]
 lto = "fat"

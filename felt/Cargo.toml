@@ -9,6 +9,7 @@ description = "Field elements representation for the Cairo VM"
 default = ["std"]
 std = []
 alloc = []
+parity-scale-codec = ["dep:parity-scale-codec"]
 
 [dependencies]
 num-integer = { version = "0.1.45", default-features = false }
@@ -19,6 +20,9 @@ lazy_static = { version = "1.4.0", default-features = false, features = [
 ] }
 serde = { version = "1.0", features = ["derive"], default-features = false }
 
+parity-scale-codec = { workspace = true, optional = true, features = [
+    "derive",
+] }
 [dev-dependencies]
 proptest = "1.1.0"
 rstest = { version = "0.17.0", default-features = false }

@@ -1,3 +1,4 @@
+use crate::serde::deserialize_program::{parse_program, ProgramJson, Reference, ValueAddress};
 use crate::stdlib::{collections::HashMap, prelude::*, sync::Arc};
 
 #[cfg(feature = "cairo-1-hints")]
@@ -6,16 +7,15 @@ use crate::{
     hint_processor::hint_processor_definition::HintReference,
     serde::deserialize_program::{
         deserialize_and_parse_program, Attribute, BuiltinName, HintParams, Identifier,
-        InstructionLocation, OffsetValue, ReferenceManager,
+        InstructionLocation, ReferenceManager,
     },
-    types::{
-        errors::program_errors::ProgramError, instruction::Register, relocatable::MaybeRelocatable,
-    },
+    types::{errors::program_errors::ProgramError, relocatable::MaybeRelocatable},
 };
 #[cfg(feature = "cairo-1-hints")]
 use cairo_lang_casm_contract_class::CasmContractClass;
 use felt::{Felt252, PRIME_STR};
-
+#[cfg(feature = "parity-scale-codec")]
+use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use std::path::Path;
 
@@ -41,7 +41,7 @@ use std::path::Path;
 // failures.
 // Fields in `Program` (other than `SharedProgramData` itself) are used by the main logic.
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
-pub(crate) struct SharedProgramData {
+pub struct SharedProgramData {
     pub(crate) data: Vec<MaybeRelocatable>,
     pub(crate) hints: HashMap<usize, Vec<HintParams>>,
     pub(crate) main: Option<usize>,
@@ -54,11 +54,130 @@ pub(crate) struct SharedProgramData {
     pub(crate) reference_manager: Vec<HintReference>,
 }
 
+#[cfg(feature = "parity-scale-codec")]
+impl Encode for SharedProgramData {
+    fn encode(&self) -> Vec<u8> {
+        let val = self.clone();
+        // Convert the hashmap to a vec because it's encodable.
+        let hints = val
+            .hints
+            .into_iter()
+            .collect::<Vec<(usize, Vec<HintParams>)>>();
+        // Transmute to bytes slice because usize is not encodable.
+        let hints: Vec<([u8; core::mem::size_of::<usize>()], Vec<HintParams>)> =
+            unsafe { core::mem::transmute(hints) };
+
+        // Convert the hashmap to a vec because it's encodable.
+        let instruction_locations = val
+            .instruction_locations
+            .map(|i| i.into_iter().collect::<Vec<(usize, InstructionLocation)>>());
+        // Transmute to bytes slice because usize is not encodable.
+        let instruction_locations: Option<
+            Vec<([u8; core::mem::size_of::<usize>()], InstructionLocation)>,
+        > = unsafe { core::mem::transmute(instruction_locations) };
+        let identifiers = val
+            .identifiers
+            .into_iter()
+            .collect::<Vec<(String, Identifier)>>();
+        (
+            val.data,
+            hints,
+            val.main.map(|v| v as u64),
+            val.start.map(|v| v as u64),
+            val.end.map(|v| v as u64),
+            val.error_message_attributes,
+            instruction_locations,
+            identifiers,
+            val.reference_manager,
+        )
+            .encode()
+    }
+}
+#[cfg(feature = "parity-scale-codec")]
+impl Decode for SharedProgramData {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
+        let res = <(
+            Vec<MaybeRelocatable>,
+            Vec<([u8; core::mem::size_of::<usize>()], Vec<HintParams>)>,
+            Option<u64>,
+            Option<u64>,
+            Option<u64>,
+            Vec<Attribute>,
+            Option<Vec<([u8; core::mem::size_of::<usize>()], InstructionLocation)>>,
+            Vec<(String, Identifier)>,
+            Vec<HintReference>,
+        )>::decode(input)
+        .unwrap();
+        let hints: Vec<(usize, Vec<HintParams>)> = unsafe {
+            core::mem::transmute(
+                res.1
+                    .into_iter()
+                    .collect::<Vec<([u8; core::mem::size_of::<usize>()], Vec<HintParams>)>>(),
+            )
+        };
+        let hints = <HashMap<usize, Vec<HintParams>>>::from_iter(hints.into_iter());
+
+        let instruction_locations: Option<Vec<(usize, InstructionLocation)>> =
+            unsafe { core::mem::transmute(res.6) };
+
+        let instruction_locations: Option<HashMap<usize, InstructionLocation>> =
+            instruction_locations
+                .map(|i| <HashMap<usize, InstructionLocation>>::from_iter(i.into_iter()));
+
+        let identifiers = <HashMap<String, Identifier>>::from_iter(res.7.into_iter());
+
+        Ok(SharedProgramData {
+            data: res.0,
+            hints,
+            main: res.2.map(|v| v as usize),
+            start: res.3.map(|v| v as usize),
+            end: res.4.map(|v| v as usize),
+            error_message_attributes: res.5,
+            instruction_locations,
+            identifiers,
+            reference_manager: res.8,
+        })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Program {
-    pub(crate) shared_program_data: Arc<SharedProgramData>,
-    pub(crate) constants: HashMap<String, Felt252>,
-    pub(crate) builtins: Vec<BuiltinName>,
+    pub shared_program_data: Arc<SharedProgramData>,
+    pub constants: HashMap<String, Felt252>,
+    pub builtins: Vec<BuiltinName>,
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl Encode for Program {
+    fn encode(&self) -> Vec<u8> {
+        let val = self.clone();
+        let constants = val
+            .constants
+            .into_iter()
+            .collect::<Vec<(String, Felt252)>>();
+        (val.shared_program_data, constants, val.builtins).encode()
+    }
+}
+#[cfg(feature = "parity-scale-codec")]
+impl Decode for Program {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
+        let res = <(
+            Arc<SharedProgramData>,
+            Vec<(String, Felt252)>,
+            Vec<BuiltinName>,
+        )>::decode(input)
+        .unwrap();
+        let constants = <HashMap<String, Felt252>>::from_iter(res.1.into_iter());
+        Ok(Program {
+            shared_program_data: res.0,
+            constants,
+            builtins: res.2,
+        })
+    }
 }
 
 impl Program {
@@ -111,6 +230,11 @@ impl Program {
         deserialize_and_parse_program(bytes, entrypoint)
     }
 
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let program_json: ProgramJson = parse_program(self.clone());
+        serde_json::to_vec(&program_json).unwrap()
+    }
+
     pub fn prime(&self) -> &str {
         _ = self;
         PRIME_STR
@@ -147,23 +271,70 @@ impl Program {
         reference_manager
             .references
             .iter()
-            .map(|r| {
-                HintReference {
-                    offset1: r.value_address.offset1.clone(),
-                    offset2: r.value_address.offset2.clone(),
-                    dereference: r.value_address.dereference,
-                    // only store `ap` tracking data if the reference is referred to it
-                    ap_tracking_data: match (&r.value_address.offset1, &r.value_address.offset2) {
-                        (OffsetValue::Reference(Register::AP, _, _), _)
-                        | (_, OffsetValue::Reference(Register::AP, _, _)) => {
-                            Some(r.ap_tracking_data.clone())
-                        }
-                        _ => None,
-                    },
-                    cairo_type: Some(r.value_address.value_type.clone()),
-                }
-            })
+            .map(|r| r.to_owned().into())
             .collect()
+    }
+}
+
+impl Program {
+    pub fn builtins(&self) -> &Vec<BuiltinName> {
+        &self.builtins
+    }
+
+    pub fn data(&self) -> &Vec<MaybeRelocatable> {
+        &self.shared_program_data.data
+    }
+
+    pub fn hints(&self) -> &HashMap<usize, Vec<HintParams>> {
+        &self.shared_program_data.hints
+    }
+
+    pub fn main(&self) -> &Option<usize> {
+        &self.shared_program_data.main
+    }
+
+    pub fn start(&self) -> &Option<usize> {
+        &self.shared_program_data.start
+    }
+
+    pub fn end(&self) -> &Option<usize> {
+        &self.shared_program_data.end
+    }
+
+    pub fn error_message_attributes(&self) -> &Vec<Attribute> {
+        &self.shared_program_data.error_message_attributes
+    }
+
+    pub fn instruction_locations(&self) -> &Option<HashMap<usize, InstructionLocation>> {
+        &self.shared_program_data.instruction_locations
+    }
+
+    pub fn identifiers(&self) -> &HashMap<String, Identifier> {
+        &self.shared_program_data.identifiers
+    }
+
+    pub fn constants(&self) -> &HashMap<String, Felt252> {
+        &self.constants
+    }
+
+    pub fn reference_manager(&self) -> ReferenceManager {
+        ReferenceManager {
+            references: self
+                .shared_program_data
+                .reference_manager
+                .iter()
+                .map(|r| Reference {
+                    value_address: ValueAddress {
+                        offset1: r.offset1.clone(),
+                        offset2: r.offset2.clone(),
+                        dereference: r.dereference,
+                        value_type: r.cairo_type.clone().unwrap_or_default(),
+                    },
+                    ap_tracking_data: r.ap_tracking_data.clone().unwrap_or_default(),
+                    pc: r.pc,
+                })
+                .collect(),
+        }
     }
 }
 
@@ -235,6 +406,55 @@ mod tests {
     use wasm_bindgen_test::*;
 
     #[test]
+    #[cfg(feature = "parity-scale-codec")]
+    fn test_encode_decode_program() {
+        let program = Program::from_bytes(
+            include_bytes!("../../../cairo_programs/manually_compiled/valid_program_a.json"),
+            Some("main"),
+        )
+        .unwrap();
+
+        assert_eq!(
+            program,
+            Program::decode(&mut &program.encode()[..]).unwrap()
+        )
+    }
+
+    #[test]
+    fn test_serialize_program() {
+        let reference_manager = ReferenceManager {
+            references: Vec::new(),
+        };
+
+        let builtins: Vec<BuiltinName> = Vec::new();
+        let data: Vec<MaybeRelocatable> = vec![
+            mayberelocatable!(5189976364521848832),
+            mayberelocatable!(1000),
+            mayberelocatable!(5189976364521848832),
+            mayberelocatable!(2000),
+            mayberelocatable!(5201798304953696256),
+            mayberelocatable!(2345108766317314046),
+        ];
+
+        let program = Program::new(
+            builtins,
+            data,
+            None,
+            HashMap::new(),
+            reference_manager,
+            HashMap::new(),
+            Vec::new(),
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(
+            program,
+            Program::from_bytes(&program.to_bytes(), None).unwrap()
+        );
+    }
+
+    #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn new() {
         let reference_manager = ReferenceManager {
@@ -298,6 +518,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -310,6 +534,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -475,6 +703,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -487,6 +719,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -541,6 +777,10 @@ mod tests {
             Identifier {
                 pc: Some(0),
                 type_: Some(String::from("function")),
+                decorators: None,
+                destination: None,
+                references: None,
+                size: None,
                 value: None,
                 full_name: None,
                 members: None,
@@ -554,6 +794,10 @@ mod tests {
                 pc: None,
                 type_: Some(String::from("const")),
                 value: Some(Felt252::zero()),
+                decorators: None,
+                destination: None,
+                references: None,
+                size: None,
                 full_name: None,
                 members: None,
                 cairo_type: None,
@@ -609,6 +853,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -621,6 +869,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -668,6 +920,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: Some(vec![]),
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -679,6 +935,10 @@ mod tests {
                 full_name: Some("__main__.main.Args".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -690,6 +950,10 @@ mod tests {
                 full_name: Some("__main__.main.ImplicitArgs".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -701,6 +965,10 @@ mod tests {
                 full_name: Some("__main__.main.Return".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -712,6 +980,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
@@ -745,6 +1017,11 @@ mod tests {
                 },
                 reference_ids: HashMap::new(),
             }),
+            accessible_scopes: vec![
+                "openzeppelin.security.safemath.library".to_string(),
+                "openzeppelin.security.safemath.library.SafeUint256".to_string(),
+                "openzeppelin.security.safemath.library.SafeUint256.add".to_string(),
+            ],
         }];
 
         let data: Vec<MaybeRelocatable> = vec![
@@ -767,6 +1044,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: Some(vec![]),
+                size: None,
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -778,6 +1059,10 @@ mod tests {
                 full_name: Some("__main__.main.Args".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -789,6 +1074,10 @@ mod tests {
                 full_name: Some("__main__.main.ImplicitArgs".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -800,6 +1089,10 @@ mod tests {
                 full_name: Some("__main__.main.Return".to_string()),
                 members: Some(HashMap::new()),
                 cairo_type: None,
+                decorators: None,
+                size: Some(0),
+                destination: None,
+                references: None,
             },
         );
         identifiers.insert(
@@ -811,6 +1104,10 @@ mod tests {
                 full_name: None,
                 members: None,
                 cairo_type: None,
+                decorators: None,
+                size: None,
+                destination: None,
+                references: None,
             },
         );
 
