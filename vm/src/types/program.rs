@@ -62,19 +62,16 @@ impl Encode for SharedProgramData {
         let hints = val
             .hints
             .into_iter()
-            .collect::<Vec<(usize, Vec<HintParams>)>>();
-        // Transmute to bytes slice because usize is not encodable.
-        let hints: Vec<([u8; core::mem::size_of::<usize>()], Vec<HintParams>)> =
-            unsafe { core::mem::transmute(hints) };
+            .map(|(id, params)| (id.to_be_bytes(), params))
+            .collect::<Vec<_>>();
 
         // Convert the hashmap to a vec because it's encodable.
-        let instruction_locations = val
-            .instruction_locations
-            .map(|i| i.into_iter().collect::<Vec<(usize, InstructionLocation)>>());
-        // Transmute to bytes slice because usize is not encodable.
-        let instruction_locations: Option<
-            Vec<([u8; core::mem::size_of::<usize>()], InstructionLocation)>,
-        > = unsafe { core::mem::transmute(instruction_locations) };
+        let instruction_locations = val.instruction_locations.map(|i| {
+            i.into_iter()
+                .map(|(id, location)| (id.to_be_bytes(), location))
+                .collect::<Vec<_>>()
+        });
+        // Convert to bytes slice because usize is not encodable.
         let identifiers = val
             .identifiers
             .into_iter()
@@ -98,7 +95,17 @@ impl Decode for SharedProgramData {
     fn decode<I: parity_scale_codec::Input>(
         input: &mut I,
     ) -> Result<Self, parity_scale_codec::Error> {
-        let res = <(
+        let (
+            data,
+            hints,
+            main,
+            start,
+            end,
+            error_message_attributes,
+            instruction_locations,
+            identifiers,
+            reference_manager,
+        ) = <(
             Vec<MaybeRelocatable>,
             Vec<([u8; core::mem::size_of::<usize>()], Vec<HintParams>)>,
             Option<u64>,
@@ -110,34 +117,32 @@ impl Decode for SharedProgramData {
             Vec<HintReference>,
         )>::decode(input)
         .unwrap();
-        let hints: Vec<(usize, Vec<HintParams>)> = unsafe {
-            core::mem::transmute(
-                res.1
-                    .into_iter()
-                    .collect::<Vec<([u8; core::mem::size_of::<usize>()], Vec<HintParams>)>>(),
-            )
-        };
-        let hints = <HashMap<usize, Vec<HintParams>>>::from_iter(hints.into_iter());
 
-        let instruction_locations: Option<Vec<(usize, InstructionLocation)>> =
-            unsafe { core::mem::transmute(res.6) };
+        let hints = hints
+            .into_iter()
+            .map(|(id, hints)| (usize::from_be_bytes(id), hints))
+            .collect::<HashMap<_, _>>();
 
-        let instruction_locations: Option<HashMap<usize, InstructionLocation>> =
-            instruction_locations
-                .map(|i| <HashMap<usize, InstructionLocation>>::from_iter(i.into_iter()));
+        let instruction_locations = instruction_locations.map(|il| {
+            il.into_iter()
+                .map(|(id, location)| (usize::from_be_bytes(id), location))
+                .collect::<HashMap<_, _>>()
+        });
 
-        let identifiers = <HashMap<String, Identifier>>::from_iter(res.7.into_iter());
+        let identifiers = identifiers
+            .into_iter()
+            .collect::<HashMap<String, Identifier>>();
 
         Ok(SharedProgramData {
-            data: res.0,
+            data,
             hints,
-            main: res.2.map(|v| v as usize),
-            start: res.3.map(|v| v as usize),
-            end: res.4.map(|v| v as usize),
-            error_message_attributes: res.5,
+            main: main.map(|v| v as usize),
+            start: start.map(|v| v as usize),
+            end: end.map(|v| v as usize),
+            error_message_attributes,
             instruction_locations,
             identifiers,
-            reference_manager: res.8,
+            reference_manager,
         })
     }
 }

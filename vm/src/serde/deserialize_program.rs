@@ -95,9 +95,8 @@ impl Encode for FlowTrackingData {
         let reference_ids = val
             .reference_ids
             .into_iter()
-            .collect::<Vec<(String, usize)>>();
-        let reference_ids: Vec<(String, [u8; core::mem::size_of::<usize>()])> =
-            unsafe { core::mem::transmute(reference_ids) };
+            .map(|(id, reference)| (id, reference.to_be_bytes()))
+            .collect::<Vec<_>>();
 
         (val.ap_tracking, reference_ids).encode()
     }
@@ -107,15 +106,17 @@ impl Decode for FlowTrackingData {
     fn decode<I: parity_scale_codec::Input>(
         input: &mut I,
     ) -> Result<Self, parity_scale_codec::Error> {
-        let res = <(
+        let (ap_tracking, reference_ids) = <(
             ApTracking,
             Vec<(String, [u8; core::mem::size_of::<usize>()])>,
         )>::decode(input)
         .unwrap();
-        let reference_ids: Vec<(String, usize)> = unsafe { core::mem::transmute(res.1) };
         Ok(FlowTrackingData {
-            ap_tracking: res.0,
-            reference_ids: <HashMap<String, usize>>::from_iter(reference_ids.into_iter()),
+            ap_tracking,
+            reference_ids: reference_ids
+                .into_iter()
+                .map(|(id, reference)| (id, usize::from_be_bytes(reference)))
+                .collect::<HashMap<_, _>>(),
         })
     }
 }

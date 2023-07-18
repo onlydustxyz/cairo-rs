@@ -7,9 +7,6 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(warnings)]
-// We need unsafe code in scale codec feature to have performant type conversions with mem::transmute.
-// All the transmutes are safe because we transmute from usize to [u8; mem::size_of::<usize>()].
-#![cfg_attr(not(feature = "parity-scale-codec"), forbid(unsafe_code))]
 #![cfg_attr(any(target_arch = "wasm32", not(feature = "std")), no_std)]
 
 #[cfg(feature = "std")]
